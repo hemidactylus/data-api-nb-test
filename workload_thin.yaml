@@ -1,0 +1,79 @@
+min_version: "5.21.0"
+
+description: Experimental custom data api workload for collections.
+
+ collection=TEMPLATE(collection,workload0_thin)
+ rampup-threads=TEMPLATE(rampup-threads,20)
+ 
+scenarios:
+
+  astra_dapi_thin_write1:
+    schema: >-
+      run driver=dataapi
+      tags==block:thin_schema
+      threads==1
+      cycles==UNDEF
+    rampup: >-
+      run driver=dataapi
+      tags==block:thin_rampup
+      cycles===TEMPLATE(rampup-cycles,100)
+      threads=TEMPLATE(rampup-threads)
+      errors=count
+    thin_write1: >-
+      run driver=dataapi
+      tags==block:thin_write1
+      cycles===TEMPLATE(main-cycles,100)
+      threads=TEMPLATE(main-threads,20) errors=count
+    thin_find1_id: >-
+      run driver=dataapi
+      tags==block:thin_find1_id
+      cycles===TEMPLATE(main-cycles,100)
+      threads=TEMPLATE(main-threads,20) errors=count
+
+bindings:
+
+  seq_rampup_id: Mod(TEMPLATE(rampup-cycles)); ToString() -> String
+  seq_rampup_value: Hash(); Mod(TEMPLATE(rampup-cycles)); ToString() -> String
+  seq_insert1_id: Template('w1_{}', Mod(TEMPLATE(main-cycles))) -> String
+  seq_insert1_value: Hash(); Mod(TEMPLATE(main-cycles)); ToString() -> String
+  read_key: Uniform(0,TEMPLATE(rampup-cycles)); ToString() -> String
+
+# params:
+#   instrument: true
+
+blocks:
+
+  thin_schema:
+    ops:
+      create_collection_op:
+        create_collection: "TEMPLATE(collection)"
+      empty_collection_op:
+        delete_all: "TEMPLATE(collection)"
+
+  thin_rampup:
+    ops:
+      insert_one_op:
+        insert_one: "TEMPLATE(collection)"
+        document:
+          _id: "{seq_rampup_id}"
+          value: "{seq_rampup_value}"
+
+  thin_write1:
+    ops:
+      insert_one_op:
+        insert_one: "TEMPLATE(collection)"
+        document:
+          _id: "{seq_insert1_id}"
+          value: "{seq_insert1_value}"
+
+  thin_find1_id:
+    ops:
+      find_one_op:
+        find: "TEMPLATE(collection)"
+        filters:
+          - conjunction: "and"
+            operator: "eq"
+            field: "_id"
+            value: "{seq_insert1_id}"
+        options:
+          limit: 1
