@@ -4,7 +4,7 @@ description: Experimental custom data api workload for collections.
 
  collection=TEMPLATE(collection,workload0_thin)
  rampup-threads=TEMPLATE(rampup-threads,20)
- 
+
 scenarios:
 
   astra_dapi_thin_write1:
