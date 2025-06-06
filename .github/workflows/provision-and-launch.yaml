@@ -29,6 +29,7 @@ jobs:
             --instance-type t2.medium \
             --key-name stefano-us-west-2-aws-keypair \
             --query 'Instances[0].InstanceId' \
+            --tag-specifications 'ResourceType=instance,Tags=[{Key=created_by,Value=data-api-nb-test_GHA},{Key=purpose,Value=running_data_api_tests}]' \
             --output text)
           echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_OUTPUT
 
