@@ -1,0 +1,58 @@
+name: "Provision and Teardown EC2"
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  create-and-destroy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::798883743502:role/github-actions-ec2-provisioner
+          aws-region: us-west-2
+
+      - name: Create an EC2 instance
+        run: |
+          INSTANCE_ID=$(aws ec2 run-instances \
+            --image-id ami-03420506796dd6873
+            --instance-type t2.medium
+            --key-name stefano-us-west-2-aws-keypair
+            --query 'Instances[0].InstanceId'
+            --output text)
+          echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_OUTPUT
+
+      - name: Wait for EC2 to be running
+        run: |
+          aws ec2 wait instance-running --instance-ids ${{ steps.<previous-step>.outputs.INSTANCE_ID }}
+
+      # - name: Do "something" on the instance
+      #   run: |
+      #     PUSH_KEY=$(aws ec2 create-key-pair --key-name temp-key --query 'KeyMaterial' --output text)
+      #     echo "$PUSH_KEY" > private.pem
+      #     chmod 600 private.pem
+
+      #     PUBLIC_IP=$(aws ec2 describe-instances \
+      #       --instance-ids ${{ steps.<previous-step>.outputs.INSTANCE_ID }} \
+      #       --query 'Reservations[0].Instances[0].PublicIpAddress' \
+      #       --output text)
+
+      #     # (Example: copy a script and run it via SSH)
+      #     echo -e "$PUSH_KEY\n" > private.pem
+      #     chmod 600 private.pem
+      #     ssh -o StrictHostKeyChecking=no -i private.pem ec2-user@"$PUBLIC_IP" 'sudo yum update -y && sudo yum install -y httpd && sudo systemctl start httpd'
+
+      - name: Terminate EC2
+        if: always()
+        run: |
+          aws ec2 terminate-instances \
+            --instance-ids ${{ steps.<previous-step>.outputs.INSTANCE_ID }}
