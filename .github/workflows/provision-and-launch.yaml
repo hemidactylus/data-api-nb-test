@@ -22,6 +22,7 @@ jobs:
           aws-region: us-west-2
 
       - name: Create an EC2 instance
+        id: create_instance
         run: |
           INSTANCE_ID=$(aws ec2 run-instances \
             --image-id ami-03420506796dd6873
@@ -33,7 +34,7 @@ jobs:
 
       - name: Wait for EC2 to be running
         run: |
-          aws ec2 wait instance-running --instance-ids ${{ steps.<previous-step>.outputs.INSTANCE_ID }}
+          aws ec2 wait instance-running --instance-ids ${{ steps.create_instance.outputs.INSTANCE_ID }}
 
       # - name: Do "something" on the instance
       #   run: |
