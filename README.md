@@ -9,6 +9,15 @@ _(scroll to bottom for a command-line to run a test.)_
 - and then analysis/report generation
 - factor launch script and the rest
 - automate provision+launch instance
+  - **DONE** oidc setup
+  - **DONE** basic GHA structure
+  - document oidc setup
+  - inject keyfile
+  - actually wait to be able to ssh
+  - user data script (setup etc)
+  - run workloads, poll for completion
+  - collect and send to s3
+  - run stats, append, send to s3
 - expand on workloads (exploratorily, then thoroughly)
 
 ## Provisioning
