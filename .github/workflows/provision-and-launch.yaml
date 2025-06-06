@@ -56,4 +56,4 @@ jobs:
         if: always()
         run: |
           aws ec2 terminate-instances \
-            --instance-ids ${{ steps.<previous-step>.outputs.INSTANCE_ID }}
+            --instance-ids ${{ steps.create_instance.outputs.INSTANCE_ID }}
