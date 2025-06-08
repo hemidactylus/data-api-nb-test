@@ -4,6 +4,7 @@ env:
   AWS_REGION: us-west-2
   AWS_KEYPAIR_NAME: stefano-us-west-2-aws-keypair
   AWS_SECURITY_GROUP_ID: sg-01be7319b68ba7f3f
+  AWS_ROLE_TO_ASSUME: arn:aws:iam::798883743502:role/github-actions-ec2-provisioner
 
 on:
   workflow_dispatch:
@@ -40,7 +41,7 @@ jobs:
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: arn:aws:iam::798883743502:role/github-actions-ec2-provisioner
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Create and store run tag
