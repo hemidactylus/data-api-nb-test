@@ -82,7 +82,7 @@ jobs:
           echo "ASTRA_DB_ENVIRONMENT=\"${ENVIRONMENT}\"" >> .env
           KEYSPACE="${INPUT_DB_KEYSPACE:-$SECRET_DB_KEYSPACE}"
           echo "ASTRA_DB_KEYSPACE=\"${KEYSPACE}\"" >> .env
-          echo RUN_TAG=\"${RUN_TAG}\"" >> .env
+          echo "RUN_TAG=\"${RUN_TAG}\"" >> .env
 
       - name: Create database if not provided
         if: ${{ github.event.inputs.database_endpoint == '' }}
@@ -120,7 +120,7 @@ jobs:
           echo "ASTRA_DB_ENVIRONMENT=\"${ENVIRONMENT}\"" >> .env
           KEYSPACE="${INPUT_DB_KEYSPACE:-$SECRET_DB_KEYSPACE}"
           echo "ASTRA_DB_KEYSPACE=\"${KEYSPACE}\"" >> .env
-          echo RUN_TAG=\"${RUN_TAG}\"" >> .env
+          echo "RUN_TAG=\"${RUN_TAG}\"" >> .env
 
       - name: Create an EC2 instance
         id: create_instance
