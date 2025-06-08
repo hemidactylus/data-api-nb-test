@@ -160,7 +160,6 @@ jobs:
         env:
           EC2_INSTANCE_ADDRESS: ${{ steps.retrieve_ec2_ip_address.outputs.EC2_INSTANCE_ADDRESS }}
         run: |
-          # NOTE: if this becomes checking for a flag file, 'ls <file>' will bubble-up fail if file missing (yeah)
           chmod 755 ./automation_scripts/cmd_waiter.sh
           ./automation_scripts/cmd_waiter.sh 10 20 \
             ssh -o StrictHostKeyChecking=no \
