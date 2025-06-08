@@ -1,7 +1,29 @@
 name: "Provision and Teardown EC2"
 
+env:
+  AWS_REGION: us-west-2
+  AWS_KEYPAIR_NAME: stefano-us-west-2-aws-keypair
+  AWS_SECURITY_GROUP_ID: sg-01be7319b68ba7f3f
+
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      database_endpoint:
+        description: "Database API Endpoint (empty for autocreate)"
+        required: false
+        default: ""
+      database_token:
+        description: "Database Token (empty for default)"
+        required: false
+        default: ""
+      database_keyspace:
+        description: "Database Keyspace (empty for default)"
+        required: false
+        default: ""
+      database_environment:
+        description: "Environment (empty for default)"
+        required: false
+        default: ""
 
 jobs:
   create-and-destroy:
@@ -19,23 +41,129 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::798883743502:role/github-actions-ec2-provisioner
-          aws-region: us-west-2
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create and store run tag
+        id: create_run_tag
+        run: |
+          RUN_TAG=`date +%Y-%m-%d_%H_%M_%S`
+          echo "$RUN_TAG" > run_tag
+          echo "RUN_TAG=$RUN_TAG" >> $GITHUB_OUTPUT
+
+      - name: Check that if a database is provided, the region is correct
+        if: ${{ github.event.inputs.database_endpoint != '' }}
+        env:
+          INPUT_DB_ENDPOINT: ${{ github.event.inputs.database_endpoint }}
+          REGION: ${{ env.AWS_REGION }}
+        run: |
+          if [[ "$INPUT_DB_ENDPOINT" != *"$REGION"* ]]; then
+            echo "Provided API endpoint in wrong region ($INPUT_DB_ENDPOINT: not in $REGION)"
+            exit 1
+          fi
+
+      - name: Prepare credentials file if database provided
+        if: ${{ github.event.inputs.database_endpoint != '' }}
+        env:
+          ENDPOINT: ${{ github.event.inputs.database_endpoint }}
+          INPUT_DB_TOKEN: ${{ github.event.inputs.database_token }}
+          SECRET_DB_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
+          INPUT_DB_ENV: ${{ github.event.inputs.database_environment }}
+          SECRET_DB_ENV: ${{ secrets.ASTRA_DB_ENVIRONMENT }}
+          INPUT_DB_KEYSPACE: ${{ github.event.inputs.database_keyspace }}
+          SECRET_DB_KEYSPACE: ${{ secrets.ASTRA_DB_KEYSPACE }}
+        run: |
+          echo "ASTRA_DB_API_ENDPOINT=\"${ENDPOINT}\"" > .env
+          # if inputs are non-empty, use them, otherwise use secrets:
+          TOKEN="${INPUT_DB_TOKEN:-$SECRET_DB_TOKEN}"
+          echo "ASTRA_DB_APPLICATION_TOKEN=\"${TOKEN}\"" >> .env
+          ENVIRONMENT="${INPUT_DB_ENV:-$SECRET_DB_ENV}"
+          echo "ASTRA_DB_ENVIRONMENT=\"${ENVIRONMENT}\"" >> .env
+          KEYSPACE="${INPUT_DB_KEYSPACE:-$SECRET_DB_KEYSPACE}"
+          echo "ASTRA_DB_KEYSPACE=\"${KEYSPACE}\"" >> .env
+
+      - name: Create database if not provided
+        if: ${{ github.event.inputs.database_endpoint == '' }}
+        env:
+          INPUT_DB_TOKEN: ${{ github.event.inputs.database_token }}
+          SECRET_DB_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
+          INPUT_DB_ENV: ${{ github.event.inputs.database_environment }}
+          SECRET_DB_ENV: ${{ secrets.ASTRA_DB_ENVIRONMENT }}
+          INPUT_DB_KEYSPACE: ${{ github.event.inputs.database_keyspace }}
+          SECRET_DB_KEYSPACE: ${{ secrets.ASTRA_DB_KEYSPACE }}
+        run: |
+          TOKEN="${INPUT_DB_TOKEN:-$SECRET_DB_TOKEN}"
+          ENVIRONMENT="${INPUT_DB_ENV:-$SECRET_DB_ENV}"
+          KEYSPACE="${INPUT_DB_KEYSPACE:-$SECRET_DB_KEYSPACE}"
+          echo "DB creation. Not implemented yet. Must use keyspace, token and env. Should set the endpoint for next step."
+          exit 1
+
+      - name: Prepare credentials file if database not provided
+        if: ${{ github.event.inputs.database_endpoint == '' }}
+        env:
+          ENDPOINT: "from next step"
+          INPUT_DB_TOKEN: ${{ github.event.inputs.database_token }}
+          SECRET_DB_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
+          INPUT_DB_ENV: ${{ github.event.inputs.database_environment }}
+          SECRET_DB_ENV: ${{ secrets.ASTRA_DB_ENVIRONMENT }}
+          INPUT_DB_KEYSPACE: ${{ github.event.inputs.database_keyspace }}
+          SECRET_DB_KEYSPACE: ${{ secrets.ASTRA_DB_KEYSPACE }}
+        run: |
+          echo "ASTRA_DB_API_ENDPOINT=\"${ENDPOINT}\"" > .env
+          # if inputs are non-empty, use them, otherwise use secrets:
+          TOKEN="${INPUT_DB_TOKEN:-$SECRET_DB_TOKEN}"
+          echo "ASTRA_DB_APPLICATION_TOKEN=\"${TOKEN}\"" >> .env
+          ENVIRONMENT="${INPUT_DB_ENV:-$SECRET_DB_ENV}"
+          echo "ASTRA_DB_ENVIRONMENT=\"${ENVIRONMENT}\"" >> .env
+          KEYSPACE="${INPUT_DB_KEYSPACE:-$SECRET_DB_KEYSPACE}"
+          echo "ASTRA_DB_KEYSPACE=\"${KEYSPACE}\"" >> .env
 
       - name: Create an EC2 instance
         id: create_instance
         run: |
-          INSTANCE_ID=$(aws ec2 run-instances \
+          EC2_INSTANCE_ID=$(aws ec2 run-instances \
             --image-id ami-03420506796dd6873 \
             --instance-type t2.medium \
-            --key-name stefano-us-west-2-aws-keypair \
+            --key-name ${{ env.AWS_KEYPAIR_NAME }} \
+            --security-group-ids ${{ env.AWS_SECURITY_GROUP_ID }} \
             --query 'Instances[0].InstanceId' \
-            --tag-specifications 'ResourceType=instance,Tags=[{Key=created_by,Value=data-api-nb-test_GHA},{Key=purpose,Value=running_data_api_tests}]' \
+            --tag-specifications 'ResourceType=instance,Tags=[{Key=created_by,Value=data-api-nb-test_GHA},{Key=purpose,Value=running_data_api_tests},{Key=created_at,Value=${{ steps.create_run_tag.outputs.RUN_TAG }} }]' \
             --output text)
-          echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_OUTPUT
+          echo "EC2_INSTANCE_ID=$EC2_INSTANCE_ID" >> $GITHUB_OUTPUT
+
+      - name: Rehydrate the ssh private key from repo secret
+        env:
+          AWS_PRIVATE_KEY_CONTENT: ${{ secrets.AWS_PRIVATE_KEY_CONTENT }}
+        run: |
+          echo "${AWS_PRIVATE_KEY_CONTENT}" > private_ssh_key.pem
+          chmod 400 private_ssh_key.pem
+
+      - name: Fetch and store the IP address of the instance
+        id: retrieve_ec2_ip_address
+        run: |
+          EC2_INSTANCE_ADDRESS=$(aws ec2 describe-instances \
+            --instance-ids ${{ steps.create_instance.outputs.EC2_INSTANCE_ID }} \
+            --query 'Reservations[0].Instances[0].PublicIpAddress' \
+            --output text)
+          echo "EC2_INSTANCE_ADDRESS=$EC2_INSTANCE_ADDRESS" >> $GITHUB_OUTPUT
 
       - name: Wait for EC2 to be running
         run: |
-          aws ec2 wait instance-running --instance-ids ${{ steps.create_instance.outputs.INSTANCE_ID }}
+          aws ec2 wait instance-running --instance-ids ${{ steps.create_instance.outputs.EC2_INSTANCE_ID }}
+
+      - name: Wait for EC2 to be reachable
+        run: |
+          chmod 755 ./automation_scripts/cmd_waiter.sh
+          ./automation_scripts/cmd_waiter.sh 10 20 \
+            ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=5s \
+            -i ./private_ssh_key.pem \
+            admin@${EC2_INSTANCE_ADDRESS} 'ls -a'
+
+      - name: Transfer environment file to EC2
+        env:
+          EC2_INSTANCE_ADDRESS: ${{ steps.retrieve_ec2_ip_address.outputs.EC2_INSTANCE_ADDRESS }}
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_ssh_key.pem .env admin@${EC2_INSTANCE_ADDRESS}:/Y
 
       # - name: Do "something" on the instance
       #   run: |
@@ -44,7 +172,7 @@ jobs:
       #     chmod 600 private.pem
 
       #     PUBLIC_IP=$(aws ec2 describe-instances \
-      #       --instance-ids ${{ steps.<previous-step>.outputs.INSTANCE_ID }} \
+      #       --instance-ids ${{ steps.<previous-step>.outputs.EC2_INSTANCE_ID }} \
       #       --query 'Reservations[0].Instances[0].PublicIpAddress' \
       #       --output text)
 
@@ -53,8 +181,9 @@ jobs:
       #     chmod 600 private.pem
       #     ssh -o StrictHostKeyChecking=no -i private.pem ec2-user@"$PUBLIC_IP" 'sudo yum update -y && sudo yum install -y httpd && sudo systemctl start httpd'
 
-      - name: Terminate EC2
-        if: always()
-        run: |
-          aws ec2 terminate-instances \
-            --instance-ids ${{ steps.create_instance.outputs.INSTANCE_ID }}
+      # SUSPENDED FOR DEBUG
+      # - name: Terminate EC2
+      #   if: always()
+      #   run: |
+      #     aws ec2 terminate-instances \
+      #       --instance-ids ${{ steps.create_instance.outputs.EC2_INSTANCE_ID }}

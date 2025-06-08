@@ -11,13 +11,14 @@ _(scroll to bottom for a command-line to run a test.)_
 - automate provision+launch instance
   - **DONE** oidc setup
   - **DONE** basic GHA structure
-  - document oidc setup
-  - inject keyfile
-  - actually wait to be able to ssh
+  - **DONE** document oidc setup
+  - **DONE** inject keyfile
+  - **DONE** actually wait to be able to ssh
   - user data script (setup etc)
   - run workloads, poll for completion
   - collect and send to s3
   - run stats, append, send to s3
+  - add alert if multiple tagged instances detected
 - expand on workloads (exploratorily, then thoroughly)
 
 ## Provisioning
@@ -62,7 +63,7 @@ git clone https://github.com/hemidactylus/data-api-nb-test.git
 
 curl -L -O https://github.com/nosqlbench/nosqlbench/releases/latest/download/nb5
 chmod +x nb5
-alias nn="`pwd`/nb5"
+alias nb5="`pwd`/nb5"
 
 # `nb5 --version` to test the alias if desired
 ```
