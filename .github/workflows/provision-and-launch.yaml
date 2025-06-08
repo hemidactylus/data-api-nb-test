@@ -121,6 +121,7 @@ jobs:
       - name: Create an EC2 instance
         id: create_instance
         run: |
+          # This would be a `Debian, 64 bit` of size `t2.medium`:
           EC2_INSTANCE_ID=$(aws ec2 run-instances \
             --image-id ami-03420506796dd6873 \
             --instance-type t2.medium \
@@ -155,6 +156,7 @@ jobs:
         env:
           EC2_INSTANCE_ADDRESS: ${{ steps.retrieve_ec2_ip_address.outputs.EC2_INSTANCE_ADDRESS }}
         run: |
+          # NOTE: if this becomes checking for a flag file, 'ls <file>' will bubble-up fail if file missing (yeah)
           chmod 755 ./automation_scripts/cmd_waiter.sh
           ./automation_scripts/cmd_waiter.sh 10 20 \
             ssh -o StrictHostKeyChecking=no \
@@ -166,7 +168,37 @@ jobs:
         env:
           EC2_INSTANCE_ADDRESS: ${{ steps.retrieve_ec2_ip_address.outputs.EC2_INSTANCE_ADDRESS }}
         run: |
-          ssh -o StrictHostKeyChecking=no -i private_ssh_key.pem .env admin@${EC2_INSTANCE_ADDRESS}:/Y
+          scp -o StrictHostKeyChecking=no \
+            -i private_ssh_key.pem \
+            .env \
+            admin@${EC2_INSTANCE_ADDRESS}:/home/admin
+
+      - name: Transfer setup script to EC2
+        env:
+          EC2_INSTANCE_ADDRESS: ${{ steps.retrieve_ec2_ip_address.outputs.EC2_INSTANCE_ADDRESS }}
+        run: |
+          chmod 755 ./automation_scripts/ec2_provision.sh
+          scp -o StrictHostKeyChecking=no \
+            -i private_ssh_key.pem \
+            ./automation_scripts/ec2_provision.sh \
+            admin@${EC2_INSTANCE_ADDRESS}:/home/admin
+
+      - name: Launch setup script on EC2
+        env:
+          EC2_INSTANCE_ADDRESS: ${{ steps.retrieve_ec2_ip_address.outputs.EC2_INSTANCE_ADDRESS }}
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+            -i ./private_ssh_key.pem \
+            admin@${EC2_INSTANCE_ADDRESS} './ec2_provision.sh'
+
+      - name: Check setup completed on EC2
+        env:
+          EC2_INSTANCE_ADDRESS: ${{ steps.retrieve_ec2_ip_address.outputs.EC2_INSTANCE_ADDRESS }}
+        run: |
+          ./automation_scripts/cmd_waiter.sh 5 5 \
+            ssh -o StrictHostKeyChecking=no \
+            -i ./private_ssh_key.pem \
+            admin@${EC2_INSTANCE_ADDRESS} 'ls EC2_PROVISION_COMPLETE'
 
       # - name: Do "something" on the instance
       #   run: |
