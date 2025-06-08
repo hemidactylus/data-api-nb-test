@@ -72,6 +72,7 @@ jobs:
           SECRET_DB_ENV: ${{ secrets.ASTRA_DB_ENVIRONMENT }}
           INPUT_DB_KEYSPACE: ${{ github.event.inputs.database_keyspace }}
           SECRET_DB_KEYSPACE: ${{ secrets.ASTRA_DB_KEYSPACE }}
+          RUN_TAG: ${{ steps.create_run_tag.outputs.RUN_TAG }}
         run: |
           echo "ASTRA_DB_API_ENDPOINT=\"${ENDPOINT}\"" > .env
           # if inputs are non-empty, use them, otherwise use secrets:
@@ -81,6 +82,7 @@ jobs:
           echo "ASTRA_DB_ENVIRONMENT=\"${ENVIRONMENT}\"" >> .env
           KEYSPACE="${INPUT_DB_KEYSPACE:-$SECRET_DB_KEYSPACE}"
           echo "ASTRA_DB_KEYSPACE=\"${KEYSPACE}\"" >> .env
+          echo RUN_TAG=\"${RUN_TAG}\"" >> .env
 
       - name: Create database if not provided
         if: ${{ github.event.inputs.database_endpoint == '' }}
@@ -108,6 +110,7 @@ jobs:
           SECRET_DB_ENV: ${{ secrets.ASTRA_DB_ENVIRONMENT }}
           INPUT_DB_KEYSPACE: ${{ github.event.inputs.database_keyspace }}
           SECRET_DB_KEYSPACE: ${{ secrets.ASTRA_DB_KEYSPACE }}
+          RUN_TAG: ${{ steps.create_run_tag.outputs.RUN_TAG }}
         run: |
           echo "ASTRA_DB_API_ENDPOINT=\"${ENDPOINT}\"" > .env
           # if inputs are non-empty, use them, otherwise use secrets:
@@ -117,6 +120,7 @@ jobs:
           echo "ASTRA_DB_ENVIRONMENT=\"${ENVIRONMENT}\"" >> .env
           KEYSPACE="${INPUT_DB_KEYSPACE:-$SECRET_DB_KEYSPACE}"
           echo "ASTRA_DB_KEYSPACE=\"${KEYSPACE}\"" >> .env
+          echo RUN_TAG=\"${RUN_TAG}\"" >> .env
 
       - name: Create an EC2 instance
         id: create_instance
@@ -200,21 +204,34 @@ jobs:
             -i ./private_ssh_key.pem \
             admin@${EC2_INSTANCE_ADDRESS} 'ls EC2_PROVISION_COMPLETE'
 
-      # - name: Do "something" on the instance
-      #   run: |
-      #     PUSH_KEY=$(aws ec2 create-key-pair --key-name temp-key --query 'KeyMaterial' --output text)
-      #     echo "$PUSH_KEY" > private.pem
-      #     chmod 600 private.pem
+      - name: Transfer test-runner script to EC2
+        env:
+          EC2_INSTANCE_ADDRESS: ${{ steps.retrieve_ec2_ip_address.outputs.EC2_INSTANCE_ADDRESS }}
+        run: |
+          chmod 755 ./test_runner/run_tests.sh
+          scp -o StrictHostKeyChecking=no \
+            -i private_ssh_key.pem \
+            ./test_runner/run_tests.sh \
+            admin@${EC2_INSTANCE_ADDRESS}:/home/admin
 
-      #     PUBLIC_IP=$(aws ec2 describe-instances \
-      #       --instance-ids ${{ steps.<previous-step>.outputs.EC2_INSTANCE_ID }} \
-      #       --query 'Reservations[0].Instances[0].PublicIpAddress' \
-      #       --output text)
+      - name: Launch test-runner script on EC2
+        env:
+          EC2_INSTANCE_ADDRESS: ${{ steps.retrieve_ec2_ip_address.outputs.EC2_INSTANCE_ADDRESS }}
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+            -i ./private_ssh_key.pem \
+            admin@${EC2_INSTANCE_ADDRESS} './run_tests.sh'
 
-      #     # (Example: copy a script and run it via SSH)
-      #     echo -e "$PUSH_KEY\n" > private.pem
-      #     chmod 600 private.pem
-      #     ssh -o StrictHostKeyChecking=no -i private.pem ec2-user@"$PUBLIC_IP" 'sudo yum update -y && sudo yum install -y httpd && sudo systemctl start httpd'
+      - name: Check tests completed on EC2
+        env:
+          EC2_INSTANCE_ADDRESS: ${{ steps.retrieve_ec2_ip_address.outputs.EC2_INSTANCE_ADDRESS }}
+        run: |
+          ./automation_scripts/cmd_waiter.sh 5 5 \
+            ssh -o StrictHostKeyChecking=no \
+            -i ./private_ssh_key.pem \
+            admin@${EC2_INSTANCE_ADDRESS} 'ls TESTS_FINISHED'
+
+      # TODO: collect the results and dispatch to s3 or similar
 
       # SUSPENDED FOR DEBUG
       # - name: Terminate EC2
