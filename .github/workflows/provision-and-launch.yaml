@@ -1,4 +1,4 @@
-name: "Provision and Teardown EC2"
+name: "Launch tests on an EC2 instance"
 
 env:
   AWS_REGION: us-west-2
@@ -27,7 +27,7 @@ on:
         default: ""
 
 jobs:
-  create-and-destroy:
+  provision-and-launch:
     runs-on: ubuntu-latest
 
     permissions:
@@ -152,6 +152,8 @@ jobs:
           aws ec2 wait instance-running --instance-ids ${{ steps.create_instance.outputs.EC2_INSTANCE_ID }}
 
       - name: Wait for EC2 to be reachable
+        env:
+          EC2_INSTANCE_ADDRESS: ${{ steps.retrieve_ec2_ip_address.outputs.EC2_INSTANCE_ADDRESS }}
         run: |
           chmod 755 ./automation_scripts/cmd_waiter.sh
           ./automation_scripts/cmd_waiter.sh 10 20 \

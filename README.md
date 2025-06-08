@@ -22,6 +22,7 @@ If you just need to run a test, scroll to "Launching" right away.
   - collect and send to s3
   - run stats, append, send to s3
   - add alert if multiple tagged instances detected
+- investigate on the issue with the action logs logging the params and passing a token
 - expand on workloads (exploratorily, then thoroughly)
 
 
@@ -42,7 +43,7 @@ Whether you provide a DB or not through the endpoint, the other parameters are o
 - `keyspace`
 - `env` (prod vs. dev)
 
-
+**Note that if you pass a token it will be printed in the logs (apparently no way out).** So please stick with dev at least.
 
 ## Automation setup
 
