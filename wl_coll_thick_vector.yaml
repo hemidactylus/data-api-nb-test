@@ -1,32 +1,33 @@
 min_version: "5.21.0"
 
-description: Thin nonvector Data API test
+description: Thick vector Data API test
 
- collection=TEMPLATE(collection,ptest_thin_nonvector)
+ collection=TEMPLATE(collection,ptest_thick_vector)
  rampup-threads=TEMPLATE(rampup-threads,20)
+ dimensions=TEMPLATE(dimensions,1024)
 
 scenarios:
 
-  astra_dapi_thin_nonvector:
+  sc_astra_dataapi_coll_thick_vector:
     schema: >-
       run driver=dataapi
-      tags==block:thin_schema
+      tags==block:thick_schema
       threads==1
       cycles==UNDEF
     rampup: >-
       run driver=dataapi
-      tags==block:thin_rampup
+      tags==block:thick_rampup
       cycles===TEMPLATE(rampup-cycles,100)
       threads=TEMPLATE(rampup-threads)
       errors=count
-    thin_write1: >-
+    thick_write1: >-
       run driver=dataapi
-      tags==block:thin_write1
+      tags==block:thick_write1
       cycles===TEMPLATE(main-cycles,100)
       threads=TEMPLATE(main-threads,20) errors=count
-    thin_find1_id: >-
+    thick_find_ann: >-
       run driver=dataapi
-      tags==block:thin_find1_id
+      tags==block:thick_find_ann
       cycles===TEMPLATE(main-cycles,100)
       threads=TEMPLATE(main-threads,20) errors=count
 
@@ -36,43 +37,51 @@ bindings:
   seq_rampup_value: Hash(); Mod(TEMPLATE(rampup-cycles)); ToString() -> String
   seq_insert1_id: Template('w1_{}', Mod(TEMPLATE(main-cycles))) -> String
   seq_insert1_value: Hash(); Mod(TEMPLATE(main-cycles)); ToString() -> String
+  seq_rampup_vector: Add(11); HashedFloatVectors(TEMPLATE(dimensions,1024));
+  seq_insert1_vector: Add(37); HashedFloatVectors(TEMPLATE(dimensions,1024));
 
 # params:
 #   instrument: true
 
 blocks:
 
-  thin_schema:
+  thick_schema:
     ops:
       create_collection_op:
         create_collection: "TEMPLATE(collection)"
+        dimensions: TEMPLATE(dimensions,1024)
+        similarity: "DOT_PRODUCT"
       empty_collection_op:
         delete_all: "TEMPLATE(collection)"
 
-  thin_rampup:
+  thick_rampup:
     ops:
       insert_one_op:
-        insert_one: "TEMPLATE(collection)"
+        insert_one_vector: "TEMPLATE(collection)"
         document:
           _id: "{seq_rampup_id}"
           value: "{seq_rampup_value}"
+          metadata:
+            md_stringfield: "the_string"
+            md_intfield: 123
+            md_floatfield: 0.456
+        vector: "{seq_rampup_vector}"
 
-  thin_write1:
+  thick_write1:
     ops:
       insert_one_op:
-        insert_one: "TEMPLATE(collection)"
+        insert_one_vector: "TEMPLATE(collection)"
         document:
           _id: "{seq_insert1_id}"
           value: "{seq_insert1_value}"
+          metadata:
+            md_stringfield: "another_string"
+            md_intfield: 987
+            md_floatfield: 0.654
+        vector: "{seq_insert1_vector}"
 
-  thin_find1_id:
+  thick_find_ann:
     ops:
       find_one_op:
-        find: "TEMPLATE(collection)"
-        filters:
-          - conjunction: "and"
-            operator: "eq"
-            field: "_id"
-            value: "{seq_insert1_id}"
-        options:
-          limit: 1
+        find_vector_filter: "TEMPLATE(collection)"
+        vector: "{seq_insert1_vector}"

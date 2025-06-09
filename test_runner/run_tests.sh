@@ -21,12 +21,21 @@ mkdir -p logs
 
 # Thin, nonvector:
 
-mkdir logs/${RUN_TAG}_workload_thin_nonvector
+mkdir logs/${RUN_TAG}_wl_coll_thin_nonvector
 
-echo -e "\n\nSTARTING WORKLOAD workload_thin_nonvector\n"
+cat <<EOF > logs/${RUN_TAG}_wl_coll_thin_nonvector/metaparameters.log
+# Meta-parameters for this run
+CYCLERATE=$CYCLERATE
+RAMPUP_CYCLES=$RAMPUP_CYCLES
+RAMPUP_THREADS=$RAMPUP_THREADS
+MAIN_CYCLES=$MAIN_CYCLES
+MAIN_THREADS=$MAIN_THREADS
+EOF
+
+echo -e "\n\nSTARTING WORKLOAD wl_coll_thin_nonvector\n"
 
 ./nb5 \
-  data-api-nb-test/workload_thin_nonvector.yaml \
+  data-api-nb-test/wl_coll_thin_nonvector.yaml \
   astra_dapi_thin_nonvector \
   astraToken=$ASTRA_DB_APPLICATION_TOKEN \
   astraApiEndpoint=$ASTRA_DB_API_ENDPOINT \
@@ -37,16 +46,25 @@ echo -e "\n\nSTARTING WORKLOAD workload_thin_nonvector\n"
   main-cycles=$MAIN_CYCLES \
   main-threads=$MAIN_THREADS \
   --progress console:5s \
-  --logs-dir logs/${RUN_TAG}_workload_thin_nonvector
+  --logs-dir logs/${RUN_TAG}_wl_coll_thin_nonvector
 
 # Thick, vector:
 
-mkdir logs/${RUN_TAG}_workload_thick_vector
+mkdir logs/${RUN_TAG}_wl_coll_thick_vector
 
-echo -e "\n\nSTARTING WORKLOAD workload_thick_vector\n"
+cat <<EOF > logs/${RUN_TAG}_wl_coll_thick_vector/metaparameters.log
+# Meta-parameters for this run
+CYCLERATE=$CYCLERATE
+RAMPUP_CYCLES=$RAMPUP_CYCLES
+RAMPUP_THREADS=$RAMPUP_THREADS
+MAIN_CYCLES=$MAIN_CYCLES
+MAIN_THREADS=$MAIN_THREADS
+EOF
+
+echo -e "\n\nSTARTING WORKLOAD wl_coll_thick_vector\n"
 
 ./nb5 \
-  data-api-nb-test/workload_thick_vector.yaml \
+  data-api-nb-test/wl_coll_thick_vector.yaml \
   astra_dapi_thick_vector \
   astraToken=$ASTRA_DB_APPLICATION_TOKEN \
   astraApiEndpoint=$ASTRA_DB_API_ENDPOINT \
@@ -57,6 +75,6 @@ echo -e "\n\nSTARTING WORKLOAD workload_thick_vector\n"
   main-cycles=$MAIN_CYCLES \
   main-threads=$MAIN_THREADS \
   --progress console:5s \
-  --logs-dir logs/${RUN_TAG}_workload_thick_vector
+  --logs-dir logs/${RUN_TAG}_wl_coll_thick_vector
 
 touch TESTS_FINISHED

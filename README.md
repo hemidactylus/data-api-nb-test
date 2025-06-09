@@ -17,9 +17,9 @@ If you just need to run a test, scroll to "Launching" right away.
   - collect and send to s3
   - add alert if multiple tagged instances detected
 - investigate on the issue with the action logs logging the params and passing a token
-- rename workloads with "collections_" or something
 - analysis of results (standalone? cumulative+plots)
   - count errors on the analysis
+  - verify uniformity of metaparams (cyclerate, numthreads) across each series and raise a warning if not (later: mark in plots etc)
 
 ## Launching
 

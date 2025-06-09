@@ -242,9 +242,8 @@ jobs:
             admin@${EC2_INSTANCE_ADDRESS}:/home/admin/logs/* logs
           aws s3 cp logs/ s3://${{ env.AWS_LOGS_BUCKET_NAME }}/logs/ --recursive
 
-      # SUSPENDED FOR DEBUG
-      # - name: Terminate EC2
-      #   if: always()
-      #   run: |
-      #     aws ec2 terminate-instances \
-      #       --instance-ids ${{ steps.create_instance.outputs.EC2_INSTANCE_ID }}
+      - name: Terminate EC2
+        if: always()
+        run: |
+          aws ec2 terminate-instances \
+            --instance-ids ${{ steps.create_instance.outputs.EC2_INSTANCE_ID }}
