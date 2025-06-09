@@ -232,6 +232,7 @@ jobs:
             admin@${EC2_INSTANCE_ADDRESS} 'ls TESTS_FINISHED'
 
       - name: Store generated logs to S3
+        if: always()
         env:
           EC2_INSTANCE_ADDRESS: ${{ steps.retrieve_ec2_ip_address.outputs.EC2_INSTANCE_ADDRESS }}
         run: |
