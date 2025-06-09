@@ -5,21 +5,54 @@
 
 set -euo pipefail
 
+CYCLERATE="30"
+RAMPUP_CYCLES="1000"
+RAMPUP_THREADS="5"
+MAIN_CYCLES="5000"
+MAIN_THREADS="10"
+
 set -a
 . .env
 set +a
 
+rm -f TESTS_FINISHED
+
 mkdir -p logs
-mkdir logs/astra_dapi_thin_write1_${RUN_TAG}
+
+# Thin, nonvector:
+
+mkdir logs/workload_thin_nonvector_${RUN_TAG}
 
 ./nb5 \
-  data-api-nb-test/workload_thin.yaml \
-  astra_dapi_thin_write1 \
+  data-api-nb-test/workload_thin_nonvector.yaml \
+  astra_dapi_thin_nonvector \
   astraToken=$ASTRA_DB_APPLICATION_TOKEN \
   astraApiEndpoint=$ASTRA_DB_API_ENDPOINT \
   namespace=$ASTRA_DB_KEYSPACE \
-  cyclerate=30 rampup-cycles=500 rampup-threads=5 main-cycles=2000 main-threads=10 \
+  cyclerate=$CYCLERATE \
+  rampup-cycles=$RAMPUP_CYCLES \
+  rampup-threads=$RAMPUP_THREADS \
+  main-cycles=$MAIN_CYCLES \
+  main-threads=$MAIN_THREADS \
   --progress console:5s \
-  --logs-dir logs/astra_dapi_thin_write1_${RUN_TAG}
+  --logs-dir logs/workload_thin_nonvector_${RUN_TAG}
+
+# Thick, vector:
+
+mkdir logs/workload_thick_vector_${RUN_TAG}
+
+./nb5 \
+  data-api-nb-test/workload_thick_vector.yaml \
+  astra_dapi_thick_vector \
+  astraToken=$ASTRA_DB_APPLICATION_TOKEN \
+  astraApiEndpoint=$ASTRA_DB_API_ENDPOINT \
+  namespace=$ASTRA_DB_KEYSPACE \
+  cyclerate=$CYCLERATE \
+  rampup-cycles=$RAMPUP_CYCLES \
+  rampup-threads=$RAMPUP_THREADS \
+  main-cycles=$MAIN_CYCLES \
+  main-threads=$MAIN_THREADS \
+  --progress console:5s \
+  --logs-dir logs/workload_thick_vector_${RUN_TAG}
 
 touch TESTS_FINISHED

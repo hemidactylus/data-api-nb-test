@@ -11,13 +11,14 @@ If you just need to run a test, scroll to "Launching" right away.
     - run workload(s), poll for completion, report back on status
     - multiple tests (log subdirs, collect stats, adapt to what's available, scenarios etc)
     - collect results (+repo commit)
-    - analysis of results (standalone? cumulative+plots)
     - report generation, dispatching/serving?
   - de-hardcode `AWS_REGION`, `AWS_KEYPAIR_NAME`, `AWS_SECURITY_GROUP_ID`, `AWS_ROLE_TO_ASSUME` and make them repo secrets. Also update readme.
   - full ec2 provision script and testing it completed
   - collect and send to s3
   - add alert if multiple tagged instances detected
 - investigate on the issue with the action logs logging the params and passing a token
+- analysis of results (standalone? cumulative+plots)
+  - count errors on the analysis
 
 ## Launching
 

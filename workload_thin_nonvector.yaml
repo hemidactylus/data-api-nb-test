@@ -1,13 +1,13 @@
 min_version: "5.21.0"
 
-description: Experimental custom data api workload for collections.
+description: Thin nonvector Data API test
 
- collection=TEMPLATE(collection,workload0_thin)
+ collection=TEMPLATE(collection,ptest_thin_nonvector)
  rampup-threads=TEMPLATE(rampup-threads,20)
 
 scenarios:
 
-  astra_dapi_thin_write1:
+  astra_dapi_thin_nonvector:
     schema: >-
       run driver=dataapi
       tags==block:thin_schema
@@ -36,7 +36,6 @@ bindings:
   seq_rampup_value: Hash(); Mod(TEMPLATE(rampup-cycles)); ToString() -> String
   seq_insert1_id: Template('w1_{}', Mod(TEMPLATE(main-cycles))) -> String
   seq_insert1_value: Hash(); Mod(TEMPLATE(main-cycles)); ToString() -> String
-  read_key: Uniform(0,TEMPLATE(rampup-cycles)); ToString() -> String
 
 # params:
 #   instrument: true
