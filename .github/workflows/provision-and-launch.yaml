@@ -233,6 +233,8 @@ jobs:
 
       - name: Store generated logs to S3
         run: |
+          sleep 5
+          ls /home/admin/logs/*
           aws s3 cp /home/admin/logs/ s3://${{ env.AWS_LOGS_BUCKET_NAME }}/logs/ --recursive
 
       # SUSPENDED FOR DEBUG

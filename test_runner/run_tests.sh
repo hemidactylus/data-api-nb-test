@@ -23,6 +23,8 @@ mkdir -p logs
 
 mkdir logs/workload_thin_nonvector_${RUN_TAG}
 
+echo -e "\nSTARTING WORKLOAD workload_thin_nonvector\n"
+
 ./nb5 \
   data-api-nb-test/workload_thin_nonvector.yaml \
   astra_dapi_thin_nonvector \
@@ -40,6 +42,8 @@ mkdir logs/workload_thin_nonvector_${RUN_TAG}
 # Thick, vector:
 
 mkdir logs/workload_thick_vector_${RUN_TAG}
+
+echo -e "\nSTARTING WORKLOAD workload_thick_vector\n"
 
 ./nb5 \
   data-api-nb-test/workload_thick_vector.yaml \

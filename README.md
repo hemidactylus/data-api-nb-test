@@ -91,8 +91,6 @@ Step 3: create an **EC2 Security Group** (possibly with a distinctive name and p
 
 Step 4: create a S3 bucket for storing the raw logs from all perf-test runs, and additional analytics results. Remember the bucket name for later (e.g. `data-api-nb-test-logs`). Raw logs will be put in `logs/`.
 
-TODO: must give s3 permission to the assumed role.
-
 ### Github
 
 *TODO*: these must still be made into repo secrets: `AWS_REGION, AWS_KEYPAIR_NAME, AWS_SECURITY_GROUP_ID, AWS_ROLE_TO_ASSUME, AWS_LOGS_BUCKET_NAME`.
