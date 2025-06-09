@@ -12,11 +12,12 @@ If you just need to run a test, scroll to "Launching" right away.
     - multiple tests (log subdirs, collect stats, adapt to what's available, scenarios etc)
     - collect results (+repo commit)
     - report generation, dispatching/serving?
-  - de-hardcode `AWS_REGION`, `AWS_KEYPAIR_NAME`, `AWS_SECURITY_GROUP_ID`, `AWS_ROLE_TO_ASSUME` and make them repo secrets. Also update readme.
+  - de-hardcode `AWS_REGION`, `AWS_KEYPAIR_NAME`, `AWS_SECURITY_GROUP_ID`, `AWS_ROLE_TO_ASSUME`, `AWS_LOGS_BUCKET_NAME` and make them repo secrets. Also update readme.
   - full ec2 provision script and testing it completed
   - collect and send to s3
   - add alert if multiple tagged instances detected
 - investigate on the issue with the action logs logging the params and passing a token
+- rename workloads with "collections_" or something
 - analysis of results (standalone? cumulative+plots)
   - count errors on the analysis
 
@@ -83,13 +84,18 @@ Pick the OIDC identity provider and hit "Assign role" (choose Create a new role)
 }
 ```
 
-Pick the `AmazonEC2FullAccess` policy (there does not seem to be anything more specific out of the box).
+Pick the `AmazonEC2FullAccess` and the `AmazonS3FullAccess` policies, add them. The second is needed to upload test run results to S3 and run analytics on them.
+_Note: there does not seem to be anything more specific out of the box, so "full access" will do for now._
 
 Step 3: create an **EC2 Security Group** (possibly with a distinctive name and proper tagging), having ssh access from "Anywhere". Take note of the security group ID for later.
 
+Step 4: create a S3 bucket for storing the raw logs from all perf-test runs, and additional analytics results. Remember the bucket name for later (e.g. `data-api-nb-test-logs`). Raw logs will be put in `logs/`.
+
+TODO: must give s3 permission to the assumed role.
+
 ### Github
 
-*TODO*: these must still be made into repo secrets: `AWS_REGION, AWS_KEYPAIR_NAME, AWS_SECURITY_GROUP_ID, AWS_ROLE_TO_ASSUME`.
+*TODO*: these must still be made into repo secrets: `AWS_REGION, AWS_KEYPAIR_NAME, AWS_SECURITY_GROUP_ID, AWS_ROLE_TO_ASSUME, AWS_LOGS_BUCKET_NAME`.
 
 Github secrets for the repo:
 
