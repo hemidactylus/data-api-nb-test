@@ -23,7 +23,7 @@ mkdir -p logs
 
 mkdir logs/workload_thin_nonvector_${RUN_TAG}
 
-echo -e "\nSTARTING WORKLOAD workload_thin_nonvector\n"
+echo -e "\n\nSTARTING WORKLOAD workload_thin_nonvector\n"
 
 ./nb5 \
   data-api-nb-test/workload_thin_nonvector.yaml \
@@ -43,7 +43,7 @@ echo -e "\nSTARTING WORKLOAD workload_thin_nonvector\n"
 
 mkdir logs/workload_thick_vector_${RUN_TAG}
 
-echo -e "\nSTARTING WORKLOAD workload_thick_vector\n"
+echo -e "\n\nSTARTING WORKLOAD workload_thick_vector\n"
 
 ./nb5 \
   data-api-nb-test/workload_thick_vector.yaml \

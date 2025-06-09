@@ -3,7 +3,7 @@
 set -euo pipefail
 
 sudo apt update
-sudo apt install -y git fuse3
+sudo apt install -y git fuse3 rsync
 
 git clone https://github.com/hemidactylus/data-api-nb-test.git
 
