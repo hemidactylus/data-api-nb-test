@@ -21,7 +21,7 @@ mkdir -p logs
 
 # Thin, nonvector:
 
-mkdir logs/workload_thin_nonvector_${RUN_TAG}
+mkdir logs/${RUN_TAG}_workload_thin_nonvector
 
 echo -e "\n\nSTARTING WORKLOAD workload_thin_nonvector\n"
 
@@ -37,11 +37,11 @@ echo -e "\n\nSTARTING WORKLOAD workload_thin_nonvector\n"
   main-cycles=$MAIN_CYCLES \
   main-threads=$MAIN_THREADS \
   --progress console:5s \
-  --logs-dir logs/workload_thin_nonvector_${RUN_TAG}
+  --logs-dir logs/${RUN_TAG}_workload_thin_nonvector
 
 # Thick, vector:
 
-mkdir logs/workload_thick_vector_${RUN_TAG}
+mkdir logs/${RUN_TAG}_workload_thick_vector
 
 echo -e "\n\nSTARTING WORKLOAD workload_thick_vector\n"
 
@@ -57,6 +57,6 @@ echo -e "\n\nSTARTING WORKLOAD workload_thick_vector\n"
   main-cycles=$MAIN_CYCLES \
   main-threads=$MAIN_THREADS \
   --progress console:5s \
-  --logs-dir logs/workload_thick_vector_${RUN_TAG}
+  --logs-dir logs/${RUN_TAG}_workload_thick_vector
 
 touch TESTS_FINISHED
