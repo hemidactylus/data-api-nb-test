@@ -36,7 +36,7 @@ echo -e "\n\nSTARTING WORKLOAD wl_coll_thin_nonvector\n"
 
 ./nb5 \
   data-api-nb-test/wl_coll_thin_nonvector.yaml \
-  astra_dapi_thin_nonvector \
+  sc_astra_dataapi_coll_thin_nonvector \
   astraToken=$ASTRA_DB_APPLICATION_TOKEN \
   astraApiEndpoint=$ASTRA_DB_API_ENDPOINT \
   namespace=$ASTRA_DB_KEYSPACE \
@@ -65,7 +65,7 @@ echo -e "\n\nSTARTING WORKLOAD wl_coll_thick_vector\n"
 
 ./nb5 \
   data-api-nb-test/wl_coll_thick_vector.yaml \
-  astra_dapi_thick_vector \
+  sc_astra_dataapi_coll_thick_vector \
   astraToken=$ASTRA_DB_APPLICATION_TOKEN \
   astraApiEndpoint=$ASTRA_DB_API_ENDPOINT \
   namespace=$ASTRA_DB_KEYSPACE \
