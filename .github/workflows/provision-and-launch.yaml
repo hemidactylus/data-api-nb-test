@@ -250,3 +250,7 @@ jobs:
         run: |
           aws ec2 terminate-instances \
             --instance-ids ${{ steps.create_instance.outputs.EC2_INSTANCE_ID }}
+
+  launch-analysis:
+    needs: provision-and-launch
+    uses: ./.github/workflows/aggregate-analysis.yaml

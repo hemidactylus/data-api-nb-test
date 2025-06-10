@@ -7,6 +7,7 @@ env:
 
 on:
   workflow_dispatch: {}
+  workflow_call: {}
 
 jobs:
   run-analytics-and-store:
@@ -41,7 +42,7 @@ jobs:
 
       - name: Fetch raw logs from S3
         run: |
-          aws s3 cp s3://data-api-nb-test-logs/logs/ input_logs/ --recursive
+          aws s3 cp s3://${{ env.AWS_LOGS_BUCKET_NAME }}/logs/ input_logs/ --recursive
 
       - name: Run Python script
         run: |
@@ -50,9 +51,6 @@ jobs:
             --output_dir ../output_analysis
         working-directory: analytics
 
-      - name: Check contents on output dir
-        run: cat output_analysis/full_plottable_output.json
-
-      # - name: Store generated logs to S3
-      #   run: |
-      #     aws s3 cp logs/ s3://${{ env.AWS_LOGS_BUCKET_NAME }}/logs/ --recursive
+      - name: Store generated logs to S3
+        run: |
+          aws s3 sync output_analysis/ s3://${{ env.AWS_LOGS_BUCKET_NAME }}/analysis --delete
