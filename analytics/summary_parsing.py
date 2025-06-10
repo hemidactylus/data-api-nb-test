@@ -28,12 +28,13 @@ OBS_UNIT_MAP = {
     "nanoseconds": "ns",
 }
 
+
 class ParsedMetricSet:
     workload: str
     scenario: str
     activity: str
     name: str
-    metrics: dict[str, tuple[float,str]]
+    metrics: dict[str, tuple[float, str]]
 
     def __init__(
         self,
@@ -42,7 +43,7 @@ class ParsedMetricSet:
         scenario: str,
         activity: str,
         name: str,
-        metrics: list[tuple[str, tuple[float,str]]],
+        metrics: dict[str, tuple[float, str]],
     ) -> None:
         self.workload = workload
         self.scenario = scenario
@@ -94,10 +95,7 @@ def load_activity_desc(ad_line: str) -> dict[str, Any]:
         for pair_s in body.split(",")  # TODO: need to worry about commas in strings?
     ]
     assert all(len(pair_s) == 2 for pair_s in pairs_s)
-    return dict(
-        [pair_s[0], json.loads(pair_s[1])]
-        for pair_s in pairs_s
-    )
+    return dict([pair_s[0], json.loads(pair_s[1])] for pair_s in pairs_s)
 
 
 def is_useful_activity(a_desc: dict[str, Any]) -> bool:
@@ -120,7 +118,6 @@ def is_separator_line(line: str) -> bool:
 
 
 def parse_lines_to_metric_map(lines: list[str]) -> dict[str, tuple[float, str]]:
-
     def _parse_line(_line: str) -> tuple[str, tuple[float, str]] | None:
         line = _line.replace("<=", "=")
         if " = " not in line:
@@ -132,19 +129,15 @@ def parse_lines_to_metric_map(lines: list[str]) -> dict[str, tuple[float, str]]:
 
         obs_val: tuple[float, str]
         if len(val_parts) == 1:
-            obs_val = [float(val_parts[0]), ""]
+            obs_val = (float(val_parts[0]), "")
         elif len(val_parts) == 2:
-            obs_val = [float(val_parts[0]), OBS_UNIT_MAP[val_parts[1]]]
+            obs_val = (float(val_parts[0]), OBS_UNIT_MAP[val_parts[1]])
         else:
             raise ValueError(f"Unexpected observable format from line {_line}")
 
         return (obs_name, obs_val)
 
-    return dict(
-        _parsed
-        for ln in lines
-        if (_parsed := _parse_line(ln)) is not None
-    )
+    return dict(_parsed for ln in lines if (_parsed := _parse_line(ln)) is not None)
 
 
 def load_metric_sets(s_filepath: str) -> list[ParsedMetricSet]:

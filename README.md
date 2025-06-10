@@ -8,13 +8,13 @@ If you just need to run a test, scroll to "Launching" right away.
 
 - DB creation/destruction if not provided
 - launching the tests:
-    - report generation, dispatching/serving?
   - de-hardcode `AWS_REGION`, `AWS_KEYPAIR_NAME`, `AWS_SECURITY_GROUP_ID`, `AWS_ROLE_TO_ASSUME`, `AWS_LOGS_BUCKET_NAME` and make them repo secrets. Also update readme.
   - add alert if multiple tagged instances detected
-- investigate on the issue with the action logs logging the params and passing a token
+- investigate on ways to prevent cleartext logging of token if one passed to the action manually-dispatched
 - analysis of results (standalone? cumulative+plots)
   - count errors on the analysis
   - verify uniformity of metaparams (cyclerate, numthreads) across each series and raise a warning if not (later: mark in plots etc)
+  - publish/dispatch/report results
 
 ## Launching
 
