@@ -1,0 +1,58 @@
+name: "Refresh result analysis"
+
+env:
+  AWS_REGION: us-west-2
+  AWS_ROLE_TO_ASSUME: arn:aws:iam::798883743502:role/github-actions-ec2-provisioner
+  AWS_LOGS_BUCKET_NAME: data-api-nb-test-logs
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  provision-and-launch:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r analytics/requirements.txt
+
+      - name: Create directories
+        run: |
+          mkdir -p input_logs
+          mkdir -p output_analysis
+
+      - name: Fetch raw logs from S3
+        run: |
+          aws s3 cp s3://data-api-nb-test-logs/logs/ input_logs/ --recursive
+
+      - name: Run Python script
+        run: |
+          python analytics.py \
+            --input_dir ../input_logs
+            --output_dir ../output_analysis
+        working-directory: analytics
+
+      - name: Check contents on output dir
+        run: cat output_analysis/full_plottable_output.json
+
+      # - name: Store generated logs to S3
+      #   run: |
+      #     aws s3 cp logs/ s3://${{ env.AWS_LOGS_BUCKET_NAME }}/logs/ --recursive
