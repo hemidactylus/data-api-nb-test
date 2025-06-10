@@ -3,6 +3,7 @@ from datetime import datetime
 
 DATE_FORMAT = "%Y-%m-%d_%H_%M_%S_"
 DATE_TAG_LEN = 20
+METAPARAMETERS_FILENAME = "metaparameters.log"
 
 
 def try_parse_date_tag(dtag) -> datetime | None:
@@ -12,7 +13,7 @@ def try_parse_date_tag(dtag) -> datetime | None:
         return None
 
 
-def try_parse_dir_name(dir_name: str) -> tuple[datetime, str]:
+def try_parse_dir_name(dir_name: str) -> tuple[datetime, str] | None:
     dir_date = try_parse_date_tag(dir_name[:DATE_TAG_LEN])
     if dir_date:
         dir_run_name = dir_name[DATE_TAG_LEN:]
@@ -43,3 +44,10 @@ def locate_summary_filename(src_dir: str) -> str | None:
         return None
     else:
         raise Exception(f"Multiple 'summary' candidate files found ({matching_items}).")
+
+
+def locate_metaparameters_filename(src_dir: str) -> str | None:
+    if os.path.isfile(os.path.join(src_dir, METAPARAMETERS_FILENAME)):
+        return METAPARAMETERS_FILENAME
+    else:
+        return None
