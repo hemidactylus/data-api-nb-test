@@ -9,7 +9,7 @@ on:
   workflow_dispatch: {}
 
 jobs:
-  provision-and-launch:
+  run-analytics-and-store:
     runs-on: ubuntu-latest
 
     permissions:
@@ -46,7 +46,7 @@ jobs:
       - name: Run Python script
         run: |
           python analytics.py \
-            --input_dir ../input_logs
+            --input_dir ../input_logs \
             --output_dir ../output_analysis
         working-directory: analytics
 
