@@ -15,6 +15,7 @@ import json
 import os
 from datetime import datetime
 
+from obs_plotting import plot_observables
 from os_lib import get_input_runs
 from summary_parsing import parse_run_dir, ParsedRun
 
@@ -130,6 +131,9 @@ def main() -> None:
     }
     with open(plottable_json_filename, "w") as o_file:
         json.dump(dumpable_tree, o_file, indent=2, sort_keys=True)
+
+    generated_plots = plot_observables(plottable_tree, args.output_dir)
+    print(f"Generated {len(generated_plots)} plots.")
 
 
 if __name__ == "__main__":
