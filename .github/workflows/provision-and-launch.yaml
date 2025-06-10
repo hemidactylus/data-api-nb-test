@@ -252,5 +252,10 @@ jobs:
             --instance-ids ${{ steps.create_instance.outputs.EC2_INSTANCE_ID }}
 
   launch-analysis:
+
+    permissions:
+      id-token: write
+      contents: read
+
     needs: provision-and-launch
     uses: ./.github/workflows/aggregate-analysis.yaml
