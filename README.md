@@ -122,5 +122,5 @@ in `.atlassian.env.template`:
 - `ATLASSIAN_BASE_URL`: this is `"https://<DOMAIN>.jira.com/wiki/rest/api/"`
 - `ATLASSIAN_PAGE_ID`: the one found in the page URL after `/pages`.
 
-If these are detected by the Github action, the analytics process also publishes
-to the Atlassian/Confluence page.
+If `ATLASSIAN_API_TOKEN` are detected by the Github action, the analytics process also publishes
+to the Atlassian/Confluence page (assuming all four are found).
