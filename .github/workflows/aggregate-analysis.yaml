@@ -4,10 +4,6 @@ env:
   AWS_REGION: us-west-2
   AWS_ROLE_TO_ASSUME: arn:aws:iam::798883743502:role/github-actions-ec2-provisioner
   AWS_LOGS_BUCKET_NAME: data-api-nb-test-logs
-  ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
-  ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
-  ATLASSIAN_BASE_URL: ${{ secrets.ATLASSIAN_BASE_URL }}
-  ATLASSIAN_PAGE_ID: ${{ secrets.ATLASSIAN_PAGE_ID }}
 
 on:
   workflow_dispatch: {}
@@ -15,11 +11,6 @@ on:
 
 jobs:
   run-analytics-and-store:
-    env:
-      ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
-      ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
-      ATLASSIAN_BASE_URL: ${{ secrets.ATLASSIAN_BASE_URL }}
-      ATLASSIAN_PAGE_ID: ${{ secrets.ATLASSIAN_PAGE_ID }}
 
     runs-on: ubuntu-latest
 
@@ -55,7 +46,7 @@ jobs:
           aws s3 cp s3://${{ env.AWS_LOGS_BUCKET_NAME }}/logs/ input_logs/ --recursive
 
       - name: Run Python script (with Atlassian integration)
-        if: env.ATLASSIAN_API_TOKEN != ''
+        if: secrets.ATLASSIAN_API_TOKEN != ''
         run: |
           python analytics.py \
             --input_dir ../input_logs \
@@ -64,7 +55,7 @@ jobs:
         working-directory: analytics
 
       - name: Run Python script (no Atlassian integration)
-        if: env.ATLASSIAN_API_TOKEN == ''
+        if: secrets.ATLASSIAN_API_TOKEN == ''
         run: |
           python analytics.py \
             --input_dir ../input_logs \

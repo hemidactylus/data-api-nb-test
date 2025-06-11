@@ -6,10 +6,6 @@ env:
   AWS_SECURITY_GROUP_ID: sg-01be7319b68ba7f3f
   AWS_ROLE_TO_ASSUME: arn:aws:iam::798883743502:role/github-actions-ec2-provisioner
   AWS_LOGS_BUCKET_NAME: data-api-nb-test-logs
-  ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
-  ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
-  ATLASSIAN_BASE_URL: ${{ secrets.ATLASSIAN_BASE_URL }}
-  ATLASSIAN_PAGE_ID: ${{ secrets.ATLASSIAN_PAGE_ID }}
 
 on:
   workflow_dispatch:
@@ -34,12 +30,6 @@ on:
 jobs:
   provision-and-launch:
     runs-on: ubuntu-latest
-
-    env:
-      ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
-      ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
-      ATLASSIAN_BASE_URL: ${{ secrets.ATLASSIAN_BASE_URL }}
-      ATLASSIAN_PAGE_ID: ${{ secrets.ATLASSIAN_PAGE_ID }}
 
     permissions:
       id-token: write
