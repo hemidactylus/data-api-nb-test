@@ -5,6 +5,8 @@ from datetime import datetime
 from requests.auth import HTTPBasicAuth
 from zoneinfo import ZoneInfo
 
+from summary_parsing import ParsedRun
+
 IMAGE_WIDTH_ON_PAGE_PX = 1024
 
 # settings from env
@@ -14,7 +16,9 @@ ATLASSIAN_BASE_URL = os.environ["ATLASSIAN_BASE_URL"]
 ATLASSIAN_PAGE_ID = os.environ["ATLASSIAN_PAGE_ID"]
 
 
-def upsert_attachment_to_atlassian(f_title: str, f_path: str, mime_type: str = "image/png") -> None:
+def upsert_attachment_to_atlassian(
+    f_title: str, f_path: str, mime_type: str = "image/png"
+) -> None:
     atlassian_auth = HTTPBasicAuth(ATLASSIAN_EMAIL, ATLASSIAN_API_TOKEN)
     attach_url = f"{ATLASSIAN_BASE_URL}/content/{ATLASSIAN_PAGE_ID}/child/attachment"
     # Check if filename is there already
@@ -56,6 +60,7 @@ def upsert_attachment_to_atlassian(f_title: str, f_path: str, mime_type: str = "
 
 
 def update_atlassian_page(
+    runs: dict[tuple[datetime, str], ParsedRun],
     tree: dict[
         str,
         dict[str, dict[str, dict[str, dict[str, tuple[dict[datetime, float], str]]]]],
@@ -66,6 +71,12 @@ def update_atlassian_page(
     generation_timestamp_str = datetime.now(ZoneInfo("UTC")).strftime(
         "%Y-%m-%d %H:%M:%S UTC"
     )
+    latest_run_str: str | None
+    if runs:
+        latest_run = max([run_date for run_date, _ in runs.keys()])
+        latest_run_str = latest_run.strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        latest_run_str = None
     atlassian_auth = HTTPBasicAuth(ATLASSIAN_EMAIL, ATLASSIAN_API_TOKEN)
 
     # get current version of page
@@ -81,6 +92,8 @@ def update_atlassian_page(
     # prepare html while sending images along the way
     page_doc_parts = []
     page_doc_parts.append(f"<p>Generated at: {generation_timestamp_str}</p>\n")
+    if latest_run_str:
+        page_doc_parts.append(f"<p>Last reported test run at: {latest_run_str}</p>\n")
     for _wl, wlmap in sorted(image_map.items()):
         if wlmap:
             # add h1 wl

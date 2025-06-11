@@ -259,3 +259,5 @@ jobs:
 
     needs: provision-and-launch
     uses: ./.github/workflows/aggregate-analysis.yaml
+    secrets:
+      ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}

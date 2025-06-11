@@ -153,7 +153,11 @@ def main() -> None:
 
     # prepare and upload the Atlassian page
     if args.atlassian:
-        update_atlassian_page(plottable_tree, generated_plot_map)
+        update_atlassian_page(
+            parsed_runs,
+            plottable_tree,
+            generated_plot_map,
+        )
         print("Page updated to Atlassian.")
 
 
