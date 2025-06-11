@@ -15,6 +15,7 @@ import json
 import os
 from datetime import datetime
 
+from atlassian_lib import update_atlassian_page
 from obs_plotting import plot_observables
 from os_lib import get_input_runs
 from summary_parsing import parse_run_dir, ParsedRun
@@ -41,6 +42,11 @@ def main() -> None:
         type=str,
         default="output",
         help="Path to the output directory (default: 'output')",
+    )
+    parser.add_argument(
+        "--atlassian",
+        action="store_true",
+        help="Upload a summary page on Atlassian (requires access setup)",
     )
 
     args = parser.parse_args()
@@ -132,8 +138,23 @@ def main() -> None:
     with open(plottable_json_filename, "w") as o_file:
         json.dump(dumpable_tree, o_file, indent=2, sort_keys=True)
 
-    generated_plots = plot_observables(plottable_tree, args.output_dir)
-    print(f"Generated {len(generated_plots)} plots.")
+    generated_plot_map = plot_observables(plottable_tree, args.output_dir)
+    num_generated_plots = len(
+        [
+            plt_pair
+            for wlmap in generated_plot_map.values()
+            for scmap in wlmap.values()
+            for acmap in scmap.values()
+            for nalist in acmap.values()
+            for plt_pair in nalist
+        ]
+    )
+    print(f"Generated {num_generated_plots} plots.")
+
+    # prepare and upload the Atlassian page
+    if args.atlassian:
+        update_atlassian_page(plottable_tree, generated_plot_map)
+        print("Page updated to Atlassian.")
 
 
 if __name__ == "__main__":

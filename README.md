@@ -14,7 +14,10 @@ If you just need to run a test, scroll to "Launching" right away.
 - analysis of results (standalone? cumulative+plots)
   - count errors on the analysis
   - verify uniformity of metaparams (cyclerate, numthreads) across each series and raise a warning if not (later: mark in plots etc)
-  - publish/dispatch/report results
+- publish latest results to atlassian page:
+  - params, number of points, last analysis timestamp
+  - refine the token (right now it's an all-powerful one bleah). These are not enough, as tested: `read:page:confluence + write:page:confluence + write:confluence:file`
+  - add params, num-point, last-run to the page info
 
 ## Launching
 
@@ -96,3 +99,28 @@ Github secrets for the repo:
 - `ASTRA_DB_ENVIRONMENT`: `dev` or `prod`. This also acts as a default when nothing is passed to the action.
 - `ASTRA_DB_KEYSPACE`: Setting this to anything other than `default_keyspace` would be an odd choice.
 - `AWS_PRIVATE_KEY_CONTENT`: This is a literal dump, including newlines, of the whole content of the private part of the AWS keypair to access the instance. The _name_ of the keypair must match this (long) secret value. The action needs to know this in order to ssh into the instance and perform the various steps.
+
+### Atlassian/Confluence
+
+The analysis process can also publish the latest plots to an Atlassian page.
+Follow these steps to set it up.
+
+Create a blank page in atlassian/confluence, i.e. something like
+`https://<DOMAIN>.jira.com/wiki/spaces/~<...>/pages/<ATLASSIAN_PAGE_ID>/<...>`
+
+Go to your "Atlassian account"
+[here](https://id.atlassian.com/manage-profile/security/api-tokens)
+and create an API Token. **For now** it will be one with no scopes (i.e. all-powerful),
+pending refinement in scopes and permissions. For the token, set a reasonable expiration,
+give it a clear name, choose "app = atlassian".
+
+The Github repo, in order to do the Atlassian upload, must feature the four secrets as shown
+in `.atlassian.env.template`:
+
+- `ATLASSIAN_EMAIL`: the one you authenticate to Atlassian with.
+- `ATLASSIAN_API_TOKEN`: the one you just created.
+- `ATLASSIAN_BASE_URL`: this is `"https://<DOMAIN>.jira.com/wiki/rest/api/"`
+- `ATLASSIAN_PAGE_ID`: the one found in the page URL after `/pages`.
+
+If these are detected by the Github action, the analytics process also publishes
+to the Atlassian/Confluence page.

@@ -1,4 +1,5 @@
 .env
+.atlassian.env
 logs
 _scrap
 __pycache__

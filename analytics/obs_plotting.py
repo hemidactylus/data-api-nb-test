@@ -50,14 +50,22 @@ def plot_observables(
         dict[str, dict[str, dict[str, dict[str, tuple[dict[datetime, float], str]]]]],
     ],
     out_dir: str,
-) -> list[str]:
-    generated_files = []
+) -> dict[str, dict[str, dict[str, dict[str, list[tuple[str, str]]]]]]:
+    gen_files: dict[str, dict[str, dict[str, dict[str, list[tuple[str, str]]]]]] = {}
     print(f"\nPlotting to '{out_dir}' ...")
     # workload->scenario->activity->name->observable->[date->value, unit]
     for _wl, v_wl in tree.items():
+        if _wl not in gen_files:
+            gen_files[_wl] = {}
         for _sc, v_sc in v_wl.items():
+            if _sc not in gen_files[_wl]:
+                gen_files[_wl][_sc] = {}
             for _ac, v_ac in v_sc.items():
+                if _ac not in gen_files[_wl][_sc]:
+                    gen_files[_wl][_sc][_ac] = {}
                 for _na, v_na in v_ac.items():
+                    if _na not in gen_files[_wl][_sc][_ac]:
+                        gen_files[_wl][_sc][_ac][_na] = []
                     # this becomes a single plot with the various curves at once.
                     # select the observables actually to print
                     obs_map = {
@@ -79,7 +87,7 @@ def plot_observables(
                         fig_path0 = os.path.join(out_dir, fig_name0)
                         fig0.savefig(fig_path0, bbox_inches="tight")
                         print(f"    * {fig_name0}")
-                        generated_files.append(fig_path0)
+                        gen_files[_wl][_sc][_ac][_na].append((fig_name0, fig_path0))
 
                         fig1 = plt.figure(figsize=FIGURE_FORMAT)
                         _plot_obs_map(obs_map)
@@ -90,6 +98,6 @@ def plot_observables(
                         fig_path1 = os.path.join(out_dir, fig_name1)
                         fig1.savefig(fig_path1, bbox_inches="tight")
                         print(f"    * {fig_name1}")
-                        generated_files.append(fig_path1)
+                        gen_files[_wl][_sc][_ac][_na].append((fig_name1, fig_path1))
 
-    return generated_files
+    return gen_files
