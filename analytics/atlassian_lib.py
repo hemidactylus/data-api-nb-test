@@ -10,15 +10,19 @@ from summary_parsing import ParsedRun
 IMAGE_WIDTH_ON_PAGE_PX = 1024
 
 # settings from env
-ATLASSIAN_EMAIL = os.environ["ATLASSIAN_EMAIL"]
-ATLASSIAN_API_TOKEN = os.environ["ATLASSIAN_API_TOKEN"]
-ATLASSIAN_BASE_URL = os.environ["ATLASSIAN_BASE_URL"]
-ATLASSIAN_PAGE_ID = os.environ["ATLASSIAN_PAGE_ID"]
+ATLASSIAN_EMAIL = os.getenv("ATLASSIAN_EMAIL")
+ATLASSIAN_API_TOKEN = os.getenv("ATLASSIAN_API_TOKEN")
+ATLASSIAN_BASE_URL = os.getenv("ATLASSIAN_BASE_URL")
+ATLASSIAN_PAGE_ID = os.getenv("ATLASSIAN_PAGE_ID")
 
 
 def upsert_attachment_to_atlassian(
     f_title: str, f_path: str, mime_type: str = "image/png"
 ) -> None:
+    if ATLASSIAN_EMAIL is None or ATLASSIAN_API_TOKEN is None:
+        raise ValueError("Atlassian auth secrets not provided.")
+    if ATLASSIAN_BASE_URL is None or ATLASSIAN_PAGE_ID is None:
+        raise ValueError("Atlassian page coordinates not provided.")
     atlassian_auth = HTTPBasicAuth(ATLASSIAN_EMAIL, ATLASSIAN_API_TOKEN)
     attach_url = f"{ATLASSIAN_BASE_URL}/content/{ATLASSIAN_PAGE_ID}/child/attachment"
     # Check if filename is there already
@@ -77,6 +81,10 @@ def update_atlassian_page(
         latest_run_str = latest_run.strftime("%Y-%m-%d %H:%M:%S")
     else:
         latest_run_str = None
+    if ATLASSIAN_EMAIL is None or ATLASSIAN_API_TOKEN is None:
+        raise ValueError("Atlassian auth secrets not provided.")
+    if ATLASSIAN_BASE_URL is None or ATLASSIAN_PAGE_ID is None:
+        raise ValueError("Atlassian page coordinates not provided.")
     atlassian_auth = HTTPBasicAuth(ATLASSIAN_EMAIL, ATLASSIAN_API_TOKEN)
 
     # get current version of page

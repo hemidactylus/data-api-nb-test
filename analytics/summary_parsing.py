@@ -1,9 +1,11 @@
 import json
 import os
+import warnings
 from typing import Any
 
 from os_lib import locate_summary_filename, locate_metaparameters_filename
 
+LineType = tuple[str, int]
 
 TRACKED_ACTIVITY_NAMES = {"result"}  # , "result_success"}
 OBS_NAME_MAP = {
@@ -86,15 +88,18 @@ def load_metaparameters(mp_filepath: str) -> dict[str, str]:
     )
 
 
-def load_activity_desc(ad_line: str) -> dict[str, Any]:
+def load_activity_desc(ad_linet: LineType, filepath: str) -> dict[str, Any]:
+    ad_line, ad_lineno = ad_linet
     assert ad_line[0] == "{"
     assert ad_line[-1] == "}"
     body = ad_line[1:-1]
-    pairs_s = [
-        pair_s.split("=")
-        for pair_s in body.split(",")
-    ]
-    assert all(len(pair_s) == 2 for pair_s in pairs_s)
+    pairs_s = [pair_s.split("=") for pair_s in body.split(",")]
+    if any(len(pair_s) != 2 for pair_s in pairs_s):
+        msg = (
+            f"Could not parse activity description at line {ad_lineno} in "
+            f"'{filepath}': < {ad_line} >"
+        )
+        raise ValueError(msg)
     return dict([pair_s[0], json.loads(pair_s[1])] for pair_s in pairs_s)
 
 
@@ -117,13 +122,24 @@ def is_separator_line(line: str) -> bool:
     return False
 
 
-def parse_lines_to_metric_map(lines: list[str]) -> dict[str, tuple[float, str]]:
-    def _parse_line(_line: str) -> tuple[str, tuple[float, str]] | None:
+def parse_lines_to_metric_map(
+    lines_t: list[LineType], filepath: str
+) -> dict[str, tuple[float, str]]:
+    def _parse_line(_linet: LineType) -> tuple[str, tuple[float, str]] | None:
+        _line, _lineno = _linet
         line = _line.replace("<=", "=")
         if " = " not in line:
             return None
 
         raw_obs, raw_val_s = [part.strip() for part in line.split(" = ")]
+        if raw_obs not in OBS_NAME_MAP:
+            msg = (
+                f"Unexpected observable name '{raw_obs}' at line {_lineno} "
+                f"in '{filepath}': < {_line} >. This line will be ignored."
+            )
+            warnings.warn(msg)
+            return None
+
         obs_name = OBS_NAME_MAP[raw_obs]
         val_parts = [part.strip() for part in raw_val_s.split(" ") if part.strip()]
 
@@ -137,19 +153,21 @@ def parse_lines_to_metric_map(lines: list[str]) -> dict[str, tuple[float, str]]:
 
         return (obs_name, obs_val)
 
-    return dict(_parsed for ln in lines if (_parsed := _parse_line(ln)) is not None)
+    return dict(_parsed for lnt in lines_t if (_parsed := _parse_line(lnt)) is not None)
 
 
 def load_metric_sets(s_filepath: str) -> list[ParsedMetricSet]:
     this_ms_json: dict[str, Any] | None = None
-    these_lines: list[str] = []
+    these_lines: list[LineType] = []
     found_metric_lines: list[ParsedMetricSet] = []
 
     def _flush_buffer() -> None:
         nonlocal these_lines, this_ms_json, found_metric_lines
         if these_lines and this_ms_json is not None:
             # parse lines quoting a measurement
-            parsed_metric_map = parse_lines_to_metric_map(these_lines)
+            parsed_metric_map = parse_lines_to_metric_map(
+                these_lines, filepath=s_filepath
+            )
             if parsed_metric_map:
                 found_metric_lines.append(
                     ParsedMetricSet(
@@ -163,12 +181,13 @@ def load_metric_sets(s_filepath: str) -> list[ParsedMetricSet]:
         these_lines = []
         this_ms_json = None
 
-    for _line in open(s_filepath).readlines():
+    for _lineno, _line in enumerate(open(s_filepath).readlines()):
         line = _line.strip()
+        lineno = _lineno + 1
         if line:
             if line[0] == "{":
                 # the lone defines an activity
-                a_desc = load_activity_desc(line)
+                a_desc = load_activity_desc((line, lineno), filepath=s_filepath)
                 _flush_buffer()
                 if is_useful_activity(a_desc):
                     this_ms_json = a_desc
@@ -176,7 +195,7 @@ def load_metric_sets(s_filepath: str) -> list[ParsedMetricSet]:
                 _flush_buffer()
             else:
                 if this_ms_json is not None:
-                    these_lines.append(line)
+                    these_lines.append((line, lineno))
     _flush_buffer()
     return found_metric_lines
 
@@ -194,11 +213,14 @@ def parse_run_dir(src_dir: str) -> ParsedRun:
             ...
         ]
     """
+    print(f"Parsing {src_dir}")
+
     summary_filename = locate_summary_filename(src_dir)
     metaparameters_filename = locate_metaparameters_filename(src_dir)
 
     metaparameters: dict[str, str]
     if metaparameters_filename:
+        print(f"  Loading {metaparameters_filename}")
         metaparameters = load_metaparameters(
             os.path.join(src_dir, metaparameters_filename),
         )
@@ -207,10 +229,12 @@ def parse_run_dir(src_dir: str) -> ParsedRun:
 
     metric_sets: list[ParsedMetricSet]
     if summary_filename:
+        print(f"  Loading {summary_filename}")
         metric_sets = load_metric_sets(
             os.path.join(src_dir, summary_filename),
         )
     else:
         metric_sets = []
 
+    print(f"Done parsing {src_dir}\n")
     return ParsedRun(metric_sets=metric_sets, metaparameters=metaparameters)
