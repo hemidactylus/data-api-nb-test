@@ -1,11 +1,11 @@
 name: "Launch tests on an EC2 instance"
 
 env:
-  AWS_REGION: ${{ AWS_REGION }}
-  AWS_KEYPAIR_NAME: ${{ AWS_KEYPAIR_NAME }}
-  AWS_SECURITY_GROUP_ID: ${{ AWS_SECURITY_GROUP_ID }}
-  AWS_ROLE_TO_ASSUME: ${{ AWS_ROLE_TO_ASSUME }}
-  AWS_LOGS_BUCKET_NAME: ${{ AWS_LOGS_BUCKET_NAME }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_KEYPAIR_NAME: ${{ secrets.AWS_KEYPAIR_NAME }}
+  AWS_SECURITY_GROUP_ID: ${{ secrets.AWS_SECURITY_GROUP_ID }}
+  AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+  AWS_LOGS_BUCKET_NAME: ${{ secrets.AWS_LOGS_BUCKET_NAME }}
 
 on:
   workflow_dispatch:
