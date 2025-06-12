@@ -14,9 +14,8 @@ If you just need to run a test, scroll to "Launching" right away.
   - count errors on the analysis
   - verify uniformity of metaparams (cyclerate, numthreads) across each series and raise a warning if not (later: mark in plots etc)
 - publish latest results to atlassian page:
-  - params, number of points, last analysis timestamp
+  - on-page summarize: params, number of points
   - refine the token (right now it's an all-powerful one bleah). These are not enough, as tested: `read:page:confluence + write:page:confluence + write:confluence:file`
-  - add params, num-point, last-run to the page info
 
 ## Launching
 
