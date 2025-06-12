@@ -270,7 +270,7 @@ jobs:
             --instance-ids ${{ steps.create_instance.outputs.EC2_INSTANCE_ID }}
 
       - name: Delete database if created for this test
-          if: always()
+        if: always()
         env:
           INPUT_DATABASE_ENDPOINT: ${{ github.event.inputs.database_endpoint }}
           ENDPOINT: ${{ steps.create_create_database.outputs.CREATED_DATABASE_ENDPOINT }}
