@@ -1,11 +1,11 @@
 name: "Launch tests on an EC2 instance"
 
 env:
-  AWS_REGION: us-west-2
-  AWS_KEYPAIR_NAME: stefano-us-west-2-aws-keypair
-  AWS_SECURITY_GROUP_ID: sg-01be7319b68ba7f3f
-  AWS_ROLE_TO_ASSUME: arn:aws:iam::798883743502:role/github-actions-ec2-provisioner
-  AWS_LOGS_BUCKET_NAME: data-api-nb-test-logs
+  AWS_REGION: ${{ AWS_REGION }}
+  AWS_KEYPAIR_NAME: ${{ AWS_KEYPAIR_NAME }}
+  AWS_SECURITY_GROUP_ID: ${{ AWS_SECURITY_GROUP_ID }}
+  AWS_ROLE_TO_ASSUME: ${{ AWS_ROLE_TO_ASSUME }}
+  AWS_LOGS_BUCKET_NAME: ${{ AWS_LOGS_BUCKET_NAME }}
 
 on:
   workflow_dispatch:

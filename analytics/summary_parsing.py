@@ -92,7 +92,7 @@ def load_activity_desc(ad_line: str) -> dict[str, Any]:
     body = ad_line[1:-1]
     pairs_s = [
         pair_s.split("=")
-        for pair_s in body.split(",")  # TODO: need to worry about commas in strings?
+        for pair_s in body.split(",")
     ]
     assert all(len(pair_s) == 2 for pair_s in pairs_s)
     return dict([pair_s[0], json.loads(pair_s[1])] for pair_s in pairs_s)

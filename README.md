@@ -8,7 +8,6 @@ If you just need to run a test, scroll to "Launching" right away.
 
 - DB creation/destruction if not provided
 - launching the tests:
-  - de-hardcode `AWS_REGION`, `AWS_KEYPAIR_NAME`, `AWS_SECURITY_GROUP_ID`, `AWS_ROLE_TO_ASSUME`, `AWS_LOGS_BUCKET_NAME` and make them repo secrets. Also update readme.
   - add alert if multiple tagged instances detected
 - investigate on ways to prevent cleartext logging of token if one passed to the action manually-dispatched
 - analysis of results (standalone? cumulative+plots)
@@ -45,7 +44,7 @@ Likewise, the choice of AWS keypair (matching the region) is hardcoded as a repo
 
 ### AWS
 
-OIDC connection setup, with a role to assume, is required. Also a dependable security group must be created beforehand.
+OIDC connection setup, with a role to assume, is required. Also a dependable security group must be created beforehand. Finally, an S3 bucket is needed for long-term storage of the performance measurements.
 
 #### OICD
 
@@ -85,24 +84,32 @@ Pick the OIDC identity provider and hit "Assign role" (choose Create a new role)
 Pick the `AmazonEC2FullAccess` and the `AmazonS3FullAccess` policies, add them. The second is needed to upload test run results to S3 and run analytics on them.
 _Note: there does not seem to be anything more specific out of the box, so "full access" will do for now._
 
+#### Security group
+
 Step 3: create an **EC2 Security Group** (possibly with a distinctive name and proper tagging), having ssh access from "Anywhere". Take note of the security group ID for later.
+
+#### S3 bucket
 
 Step 4: create a S3 bucket for storing the raw logs from all perf-test runs, and additional analytics results. Remember the bucket name for later (e.g. `data-api-nb-test-logs`). Raw logs will be put in `logs/`.
 
 ### Github
 
-*TODO*: these must still be made into repo secrets: `AWS_REGION, AWS_KEYPAIR_NAME, AWS_SECURITY_GROUP_ID, AWS_ROLE_TO_ASSUME, AWS_LOGS_BUCKET_NAME`.
-
-Github secrets for the repo:
+Required Github secrets for the automation to work:
 
 - `ASTRA_DB_APPLICATION_TOKEN`: a default token to use. Since this is a fallback when nothing is provided, it must be able to create databases in the default environment (e.g. `dev`).
 - `ASTRA_DB_ENVIRONMENT`: `dev` or `prod`. This also acts as a default when nothing is passed to the action.
 - `ASTRA_DB_KEYSPACE`: Setting this to anything other than `default_keyspace` would be an odd choice.
 - `AWS_PRIVATE_KEY_CONTENT`: This is a literal dump, including newlines, of the whole content of the private part of the AWS keypair to access the instance. The _name_ of the keypair must match this (long) secret value. The action needs to know this in order to ssh into the instance and perform the various steps.
+- `AWS_REGION`: name of the AWS region to use for the EC2 instance (e.g. `us-west-2`). This must match the region the AWS key-pair belongs to, and for a reliable test must be the same of the database itself.
+- `AWS_KEYPAIR_NAME` the name, as known by AWS, of the key pair used to ssh into the EC2 instance. This must correspond to the private key _content_ secret.
+`AWS_SECURITY_GROUP_ID`: the ID of the security group created earlier (e.g. `sg-0123456789abcdef0`).
+`AWS_ROLE_TO_ASSUME`: ARN of the IAM role created for the OIDC procedure (e.g. `arn:aws:iam::<YOUR_ACCOUNT_ID>:role/github-actions-ec2-provisioner`).
+`AWS_LOGS_BUCKET_NAME`: name of the S3 bucket created earlier for the performance measurements (e.g. `data-api-nb-test-logs`).
+
 
 ### Atlassian/Confluence
 
-The analysis process can also publish the latest plots to an Atlassian page.
+The analysis process can also, optionally, publish the latest plots to an Atlassian page.
 Follow these steps to set it up.
 
 Create a blank page in atlassian/confluence, i.e. something like
