@@ -269,21 +269,21 @@ jobs:
           aws ec2 terminate-instances \
             --instance-ids ${{ steps.create_instance.outputs.EC2_INSTANCE_ID }}
 
-      # - name: Delete database if created for this test
-      #     if: always() && github.event.inputs.database_endpoint == ''
-      #   env:
-      #     ENDPOINT: ${{ steps.create_create_database.outputs.CREATED_DATABASE_ENDPOINT }}
-      #     INPUT_DB_TOKEN: ${{ github.event.inputs.database_token }}
-      #     SECRET_DB_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
-      #     INPUT_DB_ENV: ${{ github.event.inputs.database_environment }}
-      #     SECRET_DB_ENV: ${{ secrets.ASTRA_DB_ENVIRONMENT }}
-      #   run: |
-      #     TOKEN="${INPUT_DB_TOKEN:-$SECRET_DB_TOKEN}"
-      #     ENVIRONMENT="${INPUT_DB_ENV:-$SECRET_DB_ENV}"
-      #     python test_runner/db_deleter.py \
-      #       ${ENVIRONMENT} \
-      #       ${ENDPOINT}
-      #       {TOKEN}
+      - name: Delete database if created for this test
+          if: ${{ always() && github.event.inputs.database_endpoint == '' }}
+        env:
+          ENDPOINT: ${{ steps.create_create_database.outputs.CREATED_DATABASE_ENDPOINT }}
+          INPUT_DB_TOKEN: ${{ github.event.inputs.database_token }}
+          SECRET_DB_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
+          INPUT_DB_ENV: ${{ github.event.inputs.database_environment }}
+          SECRET_DB_ENV: ${{ secrets.ASTRA_DB_ENVIRONMENT }}
+        run: |
+          TOKEN="${INPUT_DB_TOKEN:-$SECRET_DB_TOKEN}"
+          ENVIRONMENT="${INPUT_DB_ENV:-$SECRET_DB_ENV}"
+          python test_runner/db_deleter.py \
+            ${ENVIRONMENT} \
+            ${ENDPOINT} \
+            ${TOKEN}
 
   launch-analysis:
 
