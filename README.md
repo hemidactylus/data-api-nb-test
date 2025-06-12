@@ -11,7 +11,9 @@ The main flow, `Launch tests on an EC2 instance`, will:
 - create an EC2 instance;
 - create a database (unless a ready-to-use one is provided);
 - start the performance tests on it
+- Workload and parsing: switch to CSV METRICS (silly me for not having done it first thing)
 - collect the results;
+  - switch to csv metrics and adapt the parsing steps
 - run the analysis on all results;
 - optionally publish to Confluence;
 - and finally destroy the instance (and the database if it was created by the flow).
