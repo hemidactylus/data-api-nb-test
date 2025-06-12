@@ -2,38 +2,35 @@
 
 To set up the repo, see "Automation setup".
 
-If you just need to run a test, scroll to "Launching" right away.
-
-## TODO
-
-- DB creation/destruction if not provided
-- launching the tests:
-  - add alert if multiple tagged instances detected
-- investigate on ways to prevent cleartext logging of token if one passed to the action manually-dispatched
-- analysis of results (standalone? cumulative+plots)
-  - count errors on the analysis
-  - verify uniformity of metaparams (cyclerate, numthreads) across each series and raise a warning if not (later: mark in plots etc)
-- publish latest results to atlassian page:
-  - on-page summarize: params, number of points
-  - refine the token (right now it's an all-powerful one bleah). These are not enough, as tested: `read:page:confluence + write:page:confluence + write:confluence:file`
+If you just need to run a test, keep reading the following "Launching" section.
 
 ## Launching
 
-The action will create an EC2 instance, start the performance tests on it, collect the results and run some analysis, and finally destroy the instance.
+The main flow, `Launch tests on an EC2 instance`, will:
+
+- create an EC2 instance;
+- create a database (unless a ready-to-use one is provided);
+- start the performance tests on it
+- collect the results;
+- run the analysis on all results;
+- optionally publish to Confluence;
+- and finally destroy the instance (and the database if it was created by the flow).
+
+(Additionally, you can trigger flow `Refresh result analysis` as a stand-alone tool to refresh the analysis).
 
 ### Target database
 
 You can optionally provide a ready-to-use database: in that case, the region must match the AWS one (and desired keypair), which are hardcoded respectively at the top of the workflow yaml and in a repo secret.
 
-If no database is provided when manually starting the action (**Not supported yet**), ensure the token has enough permission to create one. In this case, the DB will be destroyed after use.
+If no database is provided when manually starting the action, ensure the token has enough permission to create one. In this case, the DB will be destroyed after use.
 
-Whether you provide a DB or not through the endpoint, the other parameters are optional. If not provided, the repo secrets are used instead. Ensure this results in a working combination (e.g. avoid leaving the default env-targeted token while setting the environment in fact to prod; ensure the keyspace exists if you provide a DB, and so on):
+Whether you provide a DB or not through the endpoint, the other parameters are optional. If not provided, the repo secrets are used instead. Ensure this results in a working combination (e.g. avoid leaving the default env-targeted token while setting the environment in fact to prod; ensure the keyspace exists if you provide a DB; ensure the token is powerful enough if a database must be created; and so on):
 
 - `token`
 - `keyspace`
-- `env` (prod vs. dev)
+- `environment` (prod vs. dev)
 
-**Note that if you pass a token it will be printed in the logs (apparently no way out).** So please stick with dev at least.
+**Note that if you pass a token it will be printed in the logs (apparently no way out).** So please stick with dev at least, to avoid leaking prod tokens.
 
 ## Automation setup
 
@@ -130,3 +127,15 @@ in `.atlassian.env.template`:
 
 If `ATLASSIAN_API_TOKEN` are detected by the Github action, the analytics process also publishes
 to the Atlassian/Confluence page (assuming all four are found).
+
+## TODOs
+
+- launching the tests:
+  - add alert if multiple tagged instances detected
+- investigate on ways to prevent cleartext logging of token if one passed to the action manually-dispatched
+- analysis of results
+  - count errors on the analysis
+  - verify uniformity of metaparams (cyclerate, numthreads) across each series and raise a warning if not (later: mark in plots etc)
+- publish latest results to atlassian page:
+  - on-page summarize: params, number of points
+  - refine the Atlassian token (right now it's an all-powerful one bleah). These are not enough, as tested: `read:page:confluence + write:page:confluence + write:confluence:file`
