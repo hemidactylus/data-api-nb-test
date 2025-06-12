@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 from summary_parsing import ParsedRun
 
 IMAGE_WIDTH_ON_PAGE_PX = 1024
+REPORT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S UTC"
 
 # settings from env
 ATLASSIAN_EMAIL = os.getenv("ATLASSIAN_EMAIL")
@@ -72,13 +73,11 @@ def update_atlassian_page(
     image_map: dict[str, dict[str, dict[str, dict[str, list[tuple[str, str]]]]]],
 ) -> None:
     print("\nAtlassian update starting.")
-    generation_timestamp_str = datetime.now(ZoneInfo("UTC")).strftime(
-        "%Y-%m-%d %H:%M:%S UTC"
-    )
+    generation_timestamp_str = datetime.now(ZoneInfo("UTC")).strftime(REPORT_DATE_FORMAT)
     latest_run_str: str | None
     if runs:
         latest_run = max([run_date for run_date, _ in runs.keys()])
-        latest_run_str = latest_run.strftime("%Y-%m-%d %H:%M:%S")
+        latest_run_str = latest_run.strftime(REPORT_DATE_FORMAT)
     else:
         latest_run_str = None
     if ATLASSIAN_EMAIL is None or ATLASSIAN_API_TOKEN is None:
@@ -99,9 +98,9 @@ def update_atlassian_page(
 
     # prepare html while sending images along the way
     page_doc_parts = []
-    page_doc_parts.append(f"<p>Generated at: {generation_timestamp_str}</p>\n")
     if latest_run_str:
         page_doc_parts.append(f"<p>Last reported test run at: {latest_run_str}</p>\n")
+    page_doc_parts.append(f"<p>Generated at: {generation_timestamp_str}</p>\n")
     for _wl, wlmap in sorted(image_map.items()):
         if wlmap:
             # add h1 wl
