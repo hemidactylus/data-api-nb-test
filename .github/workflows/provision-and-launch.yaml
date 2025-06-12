@@ -86,7 +86,18 @@ jobs:
           echo "RUN_TAG=\"${RUN_TAG}\"" >> .env
           echo "REPO_COMMIT_SHA=\"`git rev-parse HEAD`\"" >> .env
 
+      - name: Set up Python if database must be created
+        if: ${{ github.event.inputs.database_endpoint == '' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies if database must be created
+        if: ${{ github.event.inputs.database_endpoint == '' }}
+        run: pip install -r test_runner/requirements.txt
+
       - name: Create database if not provided
+        id: create_database
         if: ${{ github.event.inputs.database_endpoint == '' }}
         env:
           INPUT_DB_TOKEN: ${{ github.event.inputs.database_token }}
@@ -99,13 +110,20 @@ jobs:
           TOKEN="${INPUT_DB_TOKEN:-$SECRET_DB_TOKEN}"
           ENVIRONMENT="${INPUT_DB_ENV:-$SECRET_DB_ENV}"
           KEYSPACE="${INPUT_DB_KEYSPACE:-$SECRET_DB_KEYSPACE}"
-          echo "DB creation. Not implemented yet. Must use keyspace, token and env. Should set the endpoint for next step."
-          exit 1
+          REGION="${AWS_REGION}"
+          CREATED_DATABASE_ENDPOINT=$(
+            python test_runner/db_creator.py \
+            ${ENVIRONMENT} \
+            ${REGION} \
+            ${KEYSPACE} \
+            ${TOKEN}
+          )
+          echo "CREATED_DATABASE_ENDPOINT=$CREATED_DATABASE_ENDPOINT" >> $GITHUB_OUTPUT
 
       - name: Prepare credentials file if database not provided
         if: ${{ github.event.inputs.database_endpoint == '' }}
         env:
-          ENDPOINT: "from next step"
+          ENDPOINT: ${{ steps.create_create_database.outputs.CREATED_DATABASE_ENDPOINT }}
           INPUT_DB_TOKEN: ${{ github.event.inputs.database_token }}
           SECRET_DB_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
           INPUT_DB_ENV: ${{ github.event.inputs.database_environment }}
@@ -250,6 +268,22 @@ jobs:
         run: |
           aws ec2 terminate-instances \
             --instance-ids ${{ steps.create_instance.outputs.EC2_INSTANCE_ID }}
+
+      - name: Delete database if created for this test
+          if: always() && github.event.inputs.database_endpoint == ''
+        env:
+          ENDPOINT: ${{ steps.create_create_database.outputs.CREATED_DATABASE_ENDPOINT }}
+          INPUT_DB_TOKEN: ${{ github.event.inputs.database_token }}
+          SECRET_DB_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
+          INPUT_DB_ENV: ${{ github.event.inputs.database_environment }}
+          SECRET_DB_ENV: ${{ secrets.ASTRA_DB_ENVIRONMENT }}
+        run: |
+          TOKEN="${INPUT_DB_TOKEN:-$SECRET_DB_TOKEN}"
+          ENVIRONMENT="${INPUT_DB_ENV:-$SECRET_DB_ENV}"
+          python test_runner/db_deleter.py \
+            ${ENVIRONMENT} \
+            ${ENDPOINT}
+            {TOKEN}
 
   launch-analysis:
 
