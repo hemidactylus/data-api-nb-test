@@ -273,7 +273,7 @@ jobs:
         if: always()
         env:
           INPUT_DATABASE_ENDPOINT: ${{ github.event.inputs.database_endpoint }}
-          ENDPOINT: ${{ steps.create_create_database.outputs.CREATED_DATABASE_ENDPOINT }}
+          ENDPOINT: ${{ steps.create_database.outputs.CREATED_DATABASE_ENDPOINT }}
           INPUT_DB_TOKEN: ${{ github.event.inputs.database_token }}
           SECRET_DB_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
           INPUT_DB_ENV: ${{ github.event.inputs.database_environment }}
