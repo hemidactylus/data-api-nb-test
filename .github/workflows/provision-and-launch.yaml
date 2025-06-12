@@ -279,9 +279,9 @@ jobs:
           INPUT_DB_ENV: ${{ github.event.inputs.database_environment }}
           SECRET_DB_ENV: ${{ secrets.ASTRA_DB_ENVIRONMENT }}
         run: |
+          TOKEN="${INPUT_DB_TOKEN:-$SECRET_DB_TOKEN}"
+          ENVIRONMENT="${INPUT_DB_ENV:-$SECRET_DB_ENV}"
           if [ -z "${INPUT_DATABASE_ENDPOINT}" ]; then
-            TOKEN="${INPUT_DB_TOKEN:-$SECRET_DB_TOKEN}"
-            ENVIRONMENT="${INPUT_DB_ENV:-$SECRET_DB_ENV}"
             python test_runner/db_deleter.py \
               ${ENVIRONMENT} \
               ${ENDPOINT} \
