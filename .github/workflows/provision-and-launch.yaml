@@ -264,3 +264,6 @@ jobs:
       ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
       ATLASSIAN_BASE_URL: ${{ secrets.ATLASSIAN_BASE_URL }}
       ATLASSIAN_PAGE_ID: ${{ secrets.ATLASSIAN_PAGE_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      AWS_LOGS_BUCKET_NAME: ${{ secrets.AWS_LOGS_BUCKET_NAME }}

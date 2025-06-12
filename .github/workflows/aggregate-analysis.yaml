@@ -21,6 +21,12 @@ on:
         required: false
       ATLASSIAN_PAGE_ID:
         required: false
+      AWS_REGION:
+        required: true
+      AWS_ROLE_TO_ASSUME:
+        required: true
+      AWS_LOGS_BUCKET_NAME:
+        required: true
 
 jobs:
   run-analytics-and-store:
