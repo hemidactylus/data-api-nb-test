@@ -140,4 +140,4 @@ to the Atlassian/Confluence page (assuming all four are found).
   - verify uniformity of metaparams (cyclerate, numthreads) across each series and raise a warning if not (later: mark in plots etc)
 - publish latest results to atlassian page:
   - on-page summarize: params, number of points
-  - refine the Atlassian token (right now it's an all-powerful one bleah). These are not enough, as tested: `read:page:confluence + write:page:confluence + write:confluence:file`
+  - refine the Atlassian token (right now it's an all-powerful one. i.e. "unscoped"). Tested permissions, which seem not to be enough even to read the page: `read:attachment:confluence`, `read:confluence-content.all`, `read:confluence-content.summary`, `read:content:confluence`, `read:page:confluence`, `write:attachment:confluence`, `write:confluence-content`, `write:confluence-file`, `write:content:confluence`, `write:page:confluence`.
