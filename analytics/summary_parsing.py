@@ -1,9 +1,8 @@
-import json
 import os
-import warnings
+import re
 from typing import Any
 
-from os_lib import locate_summary_filename, locate_metaparameters_filename
+from os_lib import locate_metaparameters_filename
 
 LineType = tuple[str, int]
 
@@ -30,6 +29,11 @@ OBS_UNIT_MAP = {
     "nanoseconds": "ns",
 }
 
+CSV_FILE_PATTERN = re.compile(
+    r'^(?P<scenario>.*?)__' +
+    r'(?P<activity>.*?)__' +
+    r'(?P<name>.*?)_container_(?P<container>.*?)___workload_(?P<workload>.*?)\.csv$'
+)
 
 class ParsedMetricSet:
     workload: str
@@ -88,19 +92,12 @@ def load_metaparameters(mp_filepath: str) -> dict[str, str]:
     )
 
 
-def load_activity_desc(ad_linet: LineType, filepath: str) -> dict[str, Any]:
-    ad_line, ad_lineno = ad_linet
-    assert ad_line[0] == "{"
-    assert ad_line[-1] == "}"
-    body = ad_line[1:-1]
-    pairs_s = [pair_s.split("=") for pair_s in body.split(",")]
-    if any(len(pair_s) != 2 for pair_s in pairs_s):
-        msg = (
-            f"Could not parse activity description at line {ad_lineno} in "
-            f"'{filepath}': < {ad_line} >"
-        )
-        raise ValueError(msg)
-    return dict([pair_s[0], json.loads(pair_s[1])] for pair_s in pairs_s)
+def csv_filename_to_activity_desc(fname: str) -> dict[str, Any] | None:
+    match = CSV_FILE_PATTERN.match(fname)
+    if match:
+        return match.groupdict()
+    else:
+        return None
 
 
 def is_useful_activity(a_desc: dict[str, Any]) -> bool:
@@ -114,90 +111,56 @@ def is_useful_activity(a_desc: dict[str, Any]) -> bool:
     return True
 
 
-def is_separator_line(line: str) -> bool:
-    if "====" in line:
-        return True
-    if "----" in line:
-        return True
-    return False
+def load_csv_metrics(fpath: str) -> dict[str, tuple[float, str]] | None:
+    """
+    Read a CSV with metrics, pick relevant columns, return map
+        name -> (value, unit)
+    also dealing with filtering/average of rows. Return None if unsuitable data.
+    """
+    # TODO parse csv and return it with units (+basic validation)
+    return None
 
 
-def parse_lines_to_metric_map(
-    lines_t: list[LineType], filepath: str
-) -> dict[str, tuple[float, str]]:
-    def _parse_line(_linet: LineType) -> tuple[str, tuple[float, str]] | None:
-        _line, _lineno = _linet
-        line = _line.replace("<=", "=")
-        if " = " not in line:
-            return None
+def load_metric_csvs(src_dir: str) -> list[ParsedMetricSet]:
+    """
+    Scans files in a directory, pick those expressing metrics of interest, and
+    return their contents as a ParsedMetricSet (in part. averaged over csv rows).
+    """
+    print(f"Loading CSVs from {src_dir}")
 
-        raw_obs, raw_val_s = [part.strip() for part in line.split(" = ")]
-        if raw_obs not in OBS_NAME_MAP:
-            msg = (
-                f"Unexpected observable name '{raw_obs}' at line {_lineno} "
-                f"in '{filepath}': < {_line} >. This line will be ignored."
-            )
-            warnings.warn(msg)
-            return None
-
-        obs_name = OBS_NAME_MAP[raw_obs]
-        val_parts = [part.strip() for part in raw_val_s.split(" ") if part.strip()]
-
-        obs_val: tuple[float, str]
-        if len(val_parts) == 1:
-            obs_val = (float(val_parts[0]), "")
-        elif len(val_parts) == 2:
-            obs_val = (float(val_parts[0]), OBS_UNIT_MAP[val_parts[1]])
-        else:
-            raise ValueError(f"Unexpected observable format from line {_line}")
-
-        return (obs_name, obs_val)
-
-    return dict(_parsed for lnt in lines_t if (_parsed := _parse_line(lnt)) is not None)
+    all_csvs = [
+        (fpath, fname)
+        for fname in os.listdir(src_dir)
+        if fname[-4:].lower() == ".csv"
+        if os.path.isfile(fpath := os.path.join(src_dir, fname))
+    ]
+    csv_to_activity_desc = {
+        fpath: activity_desc
+        for fpath, fname in all_csvs
+        if (activity_desc := csv_filename_to_activity_desc(fname)) is not None
+        if is_useful_activity(activity_desc)
+    }
+    print(f"    Found {len(csv_to_activity_desc)} suitable metric csv.")
 
 
-def load_metric_sets(s_filepath: str) -> list[ParsedMetricSet]:
-    this_ms_json: dict[str, Any] | None = None
-    these_lines: list[LineType] = []
-    found_metric_lines: list[ParsedMetricSet] = []
-
-    def _flush_buffer() -> None:
-        nonlocal these_lines, this_ms_json, found_metric_lines
-        if these_lines and this_ms_json is not None:
-            # parse lines quoting a measurement
-            parsed_metric_map = parse_lines_to_metric_map(
-                these_lines, filepath=s_filepath
-            )
-            if parsed_metric_map:
-                found_metric_lines.append(
-                    ParsedMetricSet(
-                        workload=this_ms_json["workload"],
-                        scenario=this_ms_json["scenario"],
-                        activity=this_ms_json["activity"],
-                        name=this_ms_json["name"],
-                        metrics=parsed_metric_map,
-                    )
+    parsed_metric_sets: list[ParsedMetricSet] = []
+    for fpath, activity_desc in csv_to_activity_desc.items():
+        print(f"    * '{fpath}' ... ", end="")
+        metrics = load_csv_metrics(fpath)
+        if metrics:
+            print("OK")
+            parsed_metric_sets.append(
+                ParsedMetricSet(
+                    workload=activity_desc["workload"],
+                    scenario=activity_desc["scenario"],
+                    activity=activity_desc["activity"],
+                    name=activity_desc["name"],
+                    metrics=metrics,
                 )
-        these_lines = []
-        this_ms_json = None
-
-    for _lineno, _line in enumerate(open(s_filepath).readlines()):
-        line = _line.strip()
-        lineno = _lineno + 1
-        if line:
-            if line[0] == "{":
-                # the lone defines an activity
-                a_desc = load_activity_desc((line, lineno), filepath=s_filepath)
-                _flush_buffer()
-                if is_useful_activity(a_desc):
-                    this_ms_json = a_desc
-            elif is_separator_line(line):
-                _flush_buffer()
-            else:
-                if this_ms_json is not None:
-                    these_lines.append((line, lineno))
-    _flush_buffer()
-    return found_metric_lines
+            )
+        else:
+            print("Invalid/missing data found.")
+    return parsed_metric_sets
 
 
 def parse_run_dir(src_dir: str) -> ParsedRun:
@@ -215,7 +178,6 @@ def parse_run_dir(src_dir: str) -> ParsedRun:
     """
     print(f"Parsing {src_dir}")
 
-    summary_filename = locate_summary_filename(src_dir)
     metaparameters_filename = locate_metaparameters_filename(src_dir)
 
     metaparameters: dict[str, str]
@@ -227,14 +189,7 @@ def parse_run_dir(src_dir: str) -> ParsedRun:
     else:
         metaparameters = {}
 
-    metric_sets: list[ParsedMetricSet]
-    if summary_filename:
-        print(f"  Loading {summary_filename}")
-        metric_sets = load_metric_sets(
-            os.path.join(src_dir, summary_filename),
-        )
-    else:
-        metric_sets = []
+    metric_sets = load_metric_csvs(src_dir)
 
     print(f"Done parsing {src_dir}\n")
     return ParsedRun(metric_sets=metric_sets, metaparameters=metaparameters)

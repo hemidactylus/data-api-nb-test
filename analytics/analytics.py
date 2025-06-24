@@ -35,7 +35,10 @@ def main() -> None:
         "--input_dir",
         type=str,
         default="logs",
-        help="Path to the input directory (default: 'logs')",
+        help=(
+            "Path to the input directory (default: 'logs'). "
+            "Subdirs are one per run and workload"
+        ),
     )
     parser.add_argument(
         "--output_dir",
