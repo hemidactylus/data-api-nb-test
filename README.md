@@ -136,7 +136,7 @@ to the Atlassian/Confluence page (assuming all four are found).
   - add alert if multiple tagged instances detected
 - investigate on ways to prevent cleartext logging of token if one passed to the action manually-dispatched
 - analysis of results
-  - count errors on the analysis
+  - count errors on the analysis (result vs result_success equiv metrics) ==> a separate synthetic "error rate" plot!
   - verify uniformity of metaparams (cyclerate, numthreads) across each series and raise a warning if not (later: mark in plots etc)
 - publish latest results to atlassian page:
   - on-page summarize: params, number of points

@@ -6,27 +6,48 @@ from os_lib import locate_metaparameters_filename
 
 LineType = tuple[str, int]
 
-TRACKED_ACTIVITY_NAMES = {"result"}  # , "result_success"}
+TRACKED_ACTIVITY_NAMES = {"result", "result_success"}
+UNIT_LABELS = {"duration_unit", "rate_unit"}
+OBS_TO_UNIT_TYPE = {
+    "count": "",
+    "min": "duration_unit",
+    "max": "duration_unit",
+    "mean": "duration_unit",
+    "stddev": "duration_unit",
+    "p50": "duration_unit",
+    "p75": "duration_unit",
+    "p95": "duration_unit",
+    "p98": "duration_unit",
+    "p99": "duration_unit",
+    "p999": "duration_unit",
+    "mean_rate": "rate_unit",
+    "m1_rate": "rate_unit",
+    "m5_rate": "rate_unit",
+    "m15_rate": "rate_unit",
+}
 OBS_NAME_MAP = {
     "count": "count",
-    "mean rate": "rate_mean",
-    "1-minute rate": "rate_1m",
-    "5-minute rate": "rate_5m",
-    "15-minute rate": "rate_15m",
+    #
     "min": "min",
     "max": "max",
     "mean": "mean",
     "stddev": "stddev",
-    "median": "median",
-    "75%": "P750",
-    "95%": "P950",
-    "98%": "P980",
-    "99%": "P990",
-    "99.9%": "P999",
+    "p50": "P500",
+    "p75": "P750",
+    "p95": "P950",
+    "p98": "P980",
+    "p99": "P990",
+    "p999": "P999",
+    #
+    "mean_rate": "rate_mean",
+    "m1_rate": "rate_1m",
+    "m5_rate": "rate_5m",
+    "m15_rate": "rate_15m",
 }
 OBS_UNIT_MAP = {
-    "calls/nanosecond": "/ns",
-    "nanoseconds": "ns",
+    "calls/SECONDS": "/s",
+    "NANOSECONDS": "ns",
+    "": "",
 }
 
 CSV_FILE_PATTERN = re.compile(
@@ -117,8 +138,89 @@ def load_csv_metrics(fpath: str) -> dict[str, tuple[float, str]] | None:
         name -> (value, unit)
     also dealing with filtering/average of rows. Return None if unsuitable data.
     """
-    # TODO parse csv and return it with units (+basic validation)
-    return None
+    with open(fpath) as ofile:
+        lines = list(ofile.readlines())
+        if not lines:
+            print(
+                f"** No lines found in file {fpath}."
+                f"File will not be loaded."
+            )
+            return None
+        header, rows = lines[0], [_line.strip() for _line in lines[1:] if _line.strip()]
+        if not rows:
+            print(
+                f"** No data lines found in file {fpath}."
+                f"File will not be loaded."
+            )
+            return None
+        column_labels = [lab.strip() for lab in header.split(",")]
+        value_columns: dict[str, list[str]] = {lab: [] for lab in column_labels}
+        for _line_no, row in enumerate(rows):
+            line_no = _line_no + 2
+            val_strings = [val_str.strip() for val_str in row.split(",")]
+            if len(val_strings) != len(column_labels):
+                print(
+                    f"** Row/label mismatch in file {fpath} at line "
+                    f"{line_no}. File will not be loaded."
+                )
+                return None
+            for col_lab, val_str in zip(column_labels, val_strings):
+                value_columns[col_lab] += [val_str]
+        # post-processing
+        unit_map = {
+            c_label: c_vals
+            for c_label, c_vals in value_columns.items()
+            if c_label in UNIT_LABELS
+        }
+        if any(len(set(um_val)) > 1 for um_val in unit_map.values()):
+            print(
+                f"** Inhomogeneous unit labels found in file {fpath}: "
+                f"{unit_map}. File will not be loaded."
+            )
+            return None
+        obs_lists = {
+            c_label: [float(c_val) for c_val in c_vals]
+            for c_label, c_vals in value_columns.items()
+            if c_label in OBS_NAME_MAP
+        }
+        # TODO: improve this logic!
+        rows_to_keep = [row_i for row_i, row in enumerate(obs_lists["count"])]
+        if not rows_to_keep:
+            print(
+                f"** No admissible data lines found in file {fpath}."
+                f"File will not be loaded."
+            )
+            return None
+
+        # averages are weighted on 'counts'
+        counts = [obs_lists["count"][row_i] for row_i in rows_to_keep]
+        total_counts = sum(counts)
+
+        def _average(val_list):
+            return sum(val_list[row_i] * cnt for row_i, cnt in zip(rows_to_keep, counts)) / total_counts
+
+        averages = {
+            c_label: _average(c_obslist)
+            for c_label, c_obslist in obs_lists.items()
+        }
+        # overwrite 'count' average
+        final_values = {
+            **averages,
+            **{"count": total_counts},
+        }
+        # unit management
+        obs_name_to_unit = {
+            **{
+                c_unn: OBS_UNIT_MAP[c_uns[0]]
+                for c_unn, c_uns in unit_map.items()
+            },
+            **{"": ""},
+        }
+        values_with_unit = {
+            OBS_NAME_MAP[c_label]: (c_value, obs_name_to_unit[OBS_TO_UNIT_TYPE[c_label]])
+            for c_label, c_value in final_values.items()
+        }
+        return values_with_unit
 
 
 def load_metric_csvs(src_dir: str) -> list[ParsedMetricSet]:
