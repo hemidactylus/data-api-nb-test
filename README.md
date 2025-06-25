@@ -132,12 +132,15 @@ to the Atlassian/Confluence page (assuming all four are found).
 
 ## TODOs
 
+- provisioning:
+  - revert the "pin nb to 5.21.7" once the issue with symlink gets a fix
 - launching the tests:
   - add alert if multiple tagged instances detected
 - investigate on ways to prevent cleartext logging of token if one passed to the action manually-dispatched
 - analysis of results
   - count errors on the analysis (result vs result_success equiv metrics) ==> a separate synthetic "error rate" plot!
   - verify uniformity of metaparams (cyclerate, numthreads) across each series and raise a warning if not (later: mark in plots etc)
+  - also check uniformity of units (per observable) across loaded csvs
 - publish latest results to atlassian page:
   - on-page summarize: params, number of points
   - refine the Atlassian token (right now it's an all-powerful one. i.e. "unscoped"). Tested permissions, which seem not to be enough even to read the page: `read:attachment:confluence`, `read:confluence-content.all`, `read:confluence-content.summary`, `read:content:confluence`, `read:page:confluence`, `write:attachment:confluence`, `write:confluence-content`, `write:confluence-file`, `write:content:confluence`, `write:page:confluence`.
