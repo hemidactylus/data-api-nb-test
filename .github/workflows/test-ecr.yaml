@@ -13,7 +13,7 @@ env:
   AWS_ACCOUNT_ID: "798883743502"   # set your account
   ECR_REPOSITORY: "my-repo"         # set your repo
   IMAGE_TAG: "v1.2.3"              # or 'latest' etc.
-  ECR_REGISTRY: "${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com"
+  ECR_REGISTRY: "798883743502.dkr.ecr.eu-west-1.amazonaws.com"
 
 jobs:
   pull:
